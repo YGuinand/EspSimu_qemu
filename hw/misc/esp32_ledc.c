@@ -78,7 +78,7 @@ static void esp32_ledc_write(void *opaque, hwaddr addr,
 
             int div = (s->timer_conf_reg[chn]  & 0x007FFFE0) >> 5;
             int freq = 0; 
-            if(chn < 8){//HSTimer
+            if(chn < 4){//HSTimer
                 if(s->timer_conf_reg[chn]  & 0x02000000){//LEDC_TICK_SEL_HSTIMER
                     freq = 80000000L; //APB_CLK
                 }else{
