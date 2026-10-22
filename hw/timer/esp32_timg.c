@@ -20,6 +20,7 @@
 #include "hw/registerfields.h"
 #include "hw/boards.h"
 #include "hw/timer/esp32_timg.h"
+#include "qemu/timer.h"   /* [QDIAG] horodatage des evenements TIMG */
 
 
 #define TIMG_REGFILE_SIZE 0x100
@@ -38,6 +39,14 @@ static void esp32_timg_wdt_arm(Esp32TimgWdtState *ws, uint64_t ns_now);
 
 
 #define TIMG_DEBUG_LOG(...) // qemu_log(__VA_ARGS__)
+
+/* QDIAG : nom court du timer trace (T0/T1/LACT) */
+static inline int timg_timer_idx(const Esp32TimgState *s, const Esp32TimgTimerState *ts)
+{
+    if (ts == &s->t0)   return 0;
+    if (ts == &s->t1)   return 1;
+    return 2;
+}
 
 static inline void set_low_word(uint64_t *dst, uint32_t word)
 {
@@ -167,6 +176,20 @@ static void esp32_timg_write(void *opaque, hwaddr addr,
     case A_TIMG_T0CONFIG:
     case A_TIMG_T1CONFIG:
     case A_TIMG_LACTCONFIG:
+        /* QDIAG : revisions des ecritures de config (re-arm de l'alarme) */
+        {
+            static uint32_t qdiag_cfg_cnt;
+            uint32_t old = ts->config_reg;
+            if (old != value) {
+                fprintf(stderr, "[QDIAG] TIMGc TG%d T%d config 0x%08x -> 0x%08x vclk=%llums\n",
+                        s->id, timg_timer_idx(s, ts), (unsigned)old, (unsigned)value,
+                        (unsigned long long)(qemu_clock_get_ns(QEMU_CLOCK_VIRTUAL) / 1000000));
+            } else if (++qdiag_cfg_cnt % 128 == 0) {
+                fprintf(stderr, "[QDIAG] TIMGc TG%d T%d config 0x%08x (re-ecriture n%u) vclk=%llums\n",
+                        s->id, timg_timer_idx(s, ts), (unsigned)value, qdiag_cfg_cnt,
+                        (unsigned long long)(qemu_clock_get_ns(QEMU_CLOCK_VIRTUAL) / 1000000));
+            }
+        }
         ts->config_reg = value;
         esp32_timg_timer_update_config(ts);
         break;
@@ -231,6 +254,21 @@ static void esp32_timg_write(void *opaque, hwaddr addr,
     }
     case A_TIMG_WDTFEED:
         if (!esp32_timg_wdt_protected(&s->wdt)) {
+            /* QDIAG : nourrissage du WDT (cadence attendue ~1 kHz) */
+            {
+                static uint32_t qdiag_feed_cnt;
+                static uint64_t qdiag_feed_last_ns;
+                uint64_t fn = qemu_clock_get_ns(QEMU_CLOCK_VIRTUAL);
+                ++qdiag_feed_cnt;
+                if (qdiag_feed_cnt % 256 == 0 ||
+                    (qdiag_feed_last_ns && (fn - qdiag_feed_last_ns) > 50 * 1000000)) {
+                    fprintf(stderr, "[QDIAG] TIMGf TG%d WDT feed n%u dt=%uus vclk=%llums\n",
+                            s->id, qdiag_feed_cnt,
+                            (unsigned)((fn - qdiag_feed_last_ns) / 1000),
+                            (unsigned long long)(fn / 1000000));
+                }
+                qdiag_feed_last_ns = fn;
+            }
             esp32_timg_wdt_feed(&s->wdt);
         }
         break;
@@ -248,11 +286,23 @@ static void esp32_timg_write(void *opaque, hwaddr addr,
         break;
 
     case A_TIMG_INT_ENA:
+        if (s->int_ena != value)
+            fprintf(stderr, "[QDIAG] TIMGi TG%d INT_ENA 0x%x -> 0x%x vclk=%llums\n",
+                    s->id, (unsigned)s->int_ena, (unsigned)value,
+                    (unsigned long long)(qemu_clock_get_ns(QEMU_CLOCK_VIRTUAL) / 1000000));
         s->int_ena = value;
         esp32_timg_int_update(s);
         break;
     case A_TIMG_INT_CLR:
         s->int_raw &= ~value;
+        /* QDIAG : degagement des INT par le guest (cadence du ISR tick) */
+        {
+            static uint32_t qdiag_clr_cnt;
+            if (++qdiag_clr_cnt % 256 == 0)
+                fprintf(stderr, "[QDIAG] TIMGi TG%d INT_CLR 0x%x n%u vclk=%llums\n",
+                        s->id, (unsigned)value, qdiag_clr_cnt,
+                        (unsigned long long)(qemu_clock_get_ns(QEMU_CLOCK_VIRTUAL) / 1000000));
+        }
         esp32_timg_int_update(s);
         break;
     }
@@ -345,6 +395,17 @@ static void esp32_timg_timer_cb(void *opaque)
     Esp32TimgTimerState *ts = (Esp32TimgTimerState*) opaque;
     Esp32TimgState *s = ts->parent;
     uint64_t ns_now = qemu_clock_get_ns(QEMU_CLOCK_VIRTUAL);
+
+    /* QDIAG : tir d'alarme timer (capteur du tick FreeRTOS) */
+    {
+        static uint32_t qdiag_fire_cnt;
+        uint64_t delta = ts->last_fire_ns ? (ns_now - ts->last_fire_ns) : 0;
+        fprintf(stderr, "[QDIAG] TIMGf TG%d T%d fire n%u vclk=%llums delta=%uus al=%d ar=%d en=%d\n",
+                s->id, timg_timer_idx(s, ts), ++qdiag_fire_cnt,
+                (unsigned long long)(ns_now / 1000000), (unsigned)(delta / 1000),
+                (int)ts->alarm, (int)ts->autoreload, (int)ts->en);
+        ts->last_fire_ns = ns_now;
+    }
 
     TIMG_DEBUG_LOG("%s: TG%d ns=0x%llx\n", __func__, s->id, ns_now);
     uint32_t int_mask = 1 << (ts->int_type);
@@ -567,6 +628,10 @@ static void esp32_timg_wdt_cb(void *opaque)
     Esp32TimgState *s = ws->parent;
     Esp32TimgWdtStageMode mode = ws->mode[ws->cur_stage];
     TIMG_DEBUG_LOG("%s: TG%d stage %d timeout mode %d\n", __func__, s->id, ws->cur_stage, mode);
+    /* QDIAG : tir du watchdog MWDT (suspicion de periode ~2.7/4.1/6.7 s) */
+    fprintf(stderr, "[QDIAG] TIMGw TG%d WDT stage %d mode %d (en=%d fb=%d) vclk=%llums\n",
+            s->id, ws->cur_stage, mode, (int)ws->en, (int)ws->flashboot_en,
+            (unsigned long long)(qemu_clock_get_ns(QEMU_CLOCK_VIRTUAL) / 1000000));
     if (mode == WDT_MODE_INT) {
         uint32_t mask = 1 << TIMG_WDT_INT;
         if (ws->level_int_en) {

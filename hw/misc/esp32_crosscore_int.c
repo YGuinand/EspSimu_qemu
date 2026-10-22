@@ -18,10 +18,21 @@
 #include "hw/qdev-properties.h"
 #include "hw/misc/esp32_reg.h"
 #include "hw/misc/esp32_crosscore_int.h"
+#include "qemu/timer.h"   /* [QDIAG] horodatage des IPI cross-core */
 
 
 static uint64_t esp32_crosscore_int_read(void *opaque, hwaddr addr, unsigned int size)
 {
+    /* QDIAG : le guest lit l'etat "from cpu" (verification de l'IPI) */
+    {
+        static int qdiag_cc_prev_rd = -1;
+        int index = addr / 4;
+        if (qdiag_cc_prev_rd != index) {
+            qdiag_cc_prev_rd = index;
+            fprintf(stderr, "[QDIAG] XCORE rd from_cpu%d vclk=%llums\n", index,
+                    (unsigned long long)(qemu_clock_get_ns(QEMU_CLOCK_VIRTUAL) / 1000000));
+        }
+    }
     return 0;
 }
 
@@ -31,6 +42,16 @@ static void esp32_crosscore_int_write(void *opaque, hwaddr addr,
     Esp32CrosscoreInt *s = ESP32_CROSSCORE_INT(opaque);
     int index = addr / 4;
     assert(index < s->n_irqs);
+    /* QDIAG : trace des IPI (changement d'etat seulement, sinon flood) */
+    {
+        static int qdiag_cc_prev_wr[8];
+        if (index < 8 && qdiag_cc_prev_wr[index] != (int)(value & 0x1)) {
+            qdiag_cc_prev_wr[index] = (int)(value & 0x1);
+            fprintf(stderr, "[QDIAG] XCORE wr from_cpu%d <- %d vclk=%llums\n", index,
+                    (int)(value & 0x1),
+                    (unsigned long long)(qemu_clock_get_ns(QEMU_CLOCK_VIRTUAL) / 1000000));
+        }
+    }
     qemu_set_irq(s->irqs[index], value & 0x1);
 }
 

@@ -82,6 +82,9 @@ static void esp32_rtc_cntl_write(void *opaque, hwaddr addr, uint64_t value,
     Esp32RtcCntlState *s = ESP32_RTC_CNTL(opaque);
     switch (addr) {
     case A_RTC_CNTL_OPTIONS0:
+        fprintf(stderr, "[QDIAG] rtc OPTIONS0 <- 0x%08x (avant: 0x%08x, sw_stall=0x%08x) vclk=%llums\n",
+                (unsigned)value, (unsigned)s->options0_reg, (unsigned)s->sw_cpu_stall_reg,
+                (unsigned long long)(qemu_clock_get_ns(QEMU_CLOCK_VIRTUAL) / 1000000));
         if (value & R_RTC_CNTL_OPTIONS0_SW_SYS_RESET_MASK) {
             s->reset_cause[0] = ESP32_SW_SYS_RESET;
             s->reset_cause[1] = ESP32_SW_SYS_RESET;
@@ -158,6 +161,11 @@ static void esp32_rtc_update_cpu_stall(Esp32RtcCntlState* s)
     s->cpu_stall_state[0] = procpu_stall == stall_magic_val;
     s->cpu_stall_state[1] = appcpu_stall == stall_magic_val;
 
+    fprintf(stderr, "[QDIAG] rtc stall update : sw_stall=0x%08x options0=0x%08x -> procpu=%d appcpu=%d vclk=%llums\n",
+            (unsigned)s->sw_cpu_stall_reg, (unsigned)s->options0_reg,
+            s->cpu_stall_state[0], s->cpu_stall_state[1],
+            (unsigned long long)(qemu_clock_get_ns(QEMU_CLOCK_VIRTUAL) / 1000000));
+
     qemu_set_irq(s->cpu_stall_req[0], s->cpu_stall_state[0]);
     qemu_set_irq(s->cpu_stall_req[1], s->cpu_stall_state[1]);
 }
@@ -180,6 +188,10 @@ static const MemoryRegionOps esp32_rtc_cntl_ops = {
 static void esp32_rtc_cntl_reset_hold(Object *obj, ResetType type)
 {
     Esp32RtcCntlState *s = ESP32_RTC_CNTL(obj);
+
+    fprintf(stderr, "[QDIAG] rtc_cntl reset hold (sw_stall conserve 0x%08x, options0 conserve 0x%08x) vclk=%llums\n",
+            (unsigned)s->sw_cpu_stall_reg, (unsigned)s->options0_reg,
+            (unsigned long long)(qemu_clock_get_ns(QEMU_CLOCK_VIRTUAL) / 1000000));
 
     s->time_base_ns = qemu_clock_get_ns(QEMU_CLOCK_VIRTUAL);
 }

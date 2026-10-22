@@ -10,6 +10,7 @@
 #include "qemu/osdep.h"
 #include "qemu/log.h"
 #include "qemu/error-report.h"
+#include "qemu/timer.h"   /* [QDIAG] horodatage des ecritures APP CPU */
 #include "qapi/error.h"
 #include "hw/hw.h"
 #include "hw/sysbus.h"
@@ -138,6 +139,8 @@ static void esp32_dport_write(void *opaque, hwaddr addr,
     uint32_t old_val;
     switch (addr) {
     case A_DPORT_APPCPU_RESET:
+        fprintf(stderr, "[QDIAG] dport APPCPU_RESET <- 0x%x vclk=%llums\n",
+                (unsigned)value, (unsigned long long)(qemu_clock_get_ns(QEMU_CLOCK_VIRTUAL) / 1000000));
         old_state = s->appcpu_reset_state;
         s->appcpu_reset_state = value & 1;
         if (old_state && !s->appcpu_reset_state) {
@@ -145,14 +148,22 @@ static void esp32_dport_write(void *opaque, hwaddr addr,
         }
         break;
     case A_DPORT_APPCPU_CLK:
+        fprintf(stderr, "[QDIAG] dport APPCPU_CLK <- 0x%x (clkgate %d->%d) vclk=%llums\n",
+                (unsigned)value, s->appcpu_clkgate_state, (int)(value & 1),
+                (unsigned long long)(qemu_clock_get_ns(QEMU_CLOCK_VIRTUAL) / 1000000));
         s->appcpu_clkgate_state = value & 1;
         qemu_set_irq(s->appcpu_stall_req, s->appcpu_stall_state || !s->appcpu_clkgate_state);
         break;
     case A_DPORT_APPCPU_RUNSTALL:
+        fprintf(stderr, "[QDIAG] dport APPCPU_RUNSTALL <- 0x%x (stall %d->%d) vclk=%llums\n",
+                (unsigned)value, s->appcpu_stall_state, (int)(value & 1),
+                (unsigned long long)(qemu_clock_get_ns(QEMU_CLOCK_VIRTUAL) / 1000000));
         s->appcpu_stall_state = value & 1;
         qemu_set_irq(s->appcpu_stall_req, s->appcpu_stall_state || !s->appcpu_clkgate_state);
         break;
     case A_DPORT_APPCPU_BOOT_ADDR:
+        fprintf(stderr, "[QDIAG] dport APPCPU_BOOT_ADDR <- 0x%x vclk=%llums\n",
+                (unsigned)value, (unsigned long long)(qemu_clock_get_ns(QEMU_CLOCK_VIRTUAL) / 1000000));
         s->appcpu_boot_addr = value;
         break;
     case A_DPORT_CPU_PER_CONF:
@@ -376,6 +387,9 @@ static void esp32_dport_reset_hold(Object *obj, ResetType type)
 {
     Esp32DportState *s = ESP32_DPORT(obj);
 
+    fprintf(stderr, "[QDIAG] dport reset hold (clkgate %d->0, stall %d->0, boot_addr 0x%x->0) vclk=%llums\n",
+            s->appcpu_clkgate_state, s->appcpu_stall_state, (unsigned)s->appcpu_boot_addr,
+            (unsigned long long)(qemu_clock_get_ns(QEMU_CLOCK_VIRTUAL) / 1000000));
     s->appcpu_boot_addr = 0;
     s->appcpu_clkgate_state = false;
     s->appcpu_reset_state = true;

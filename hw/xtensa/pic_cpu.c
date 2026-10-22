@@ -88,6 +88,21 @@ static void xtensa_ccompare_cb(void *opaque)
     CPUXtensaState *env = ccompare->env;
     unsigned i = ccompare - env->ccompare;
 
+    /* QDIAG : tir de l'alarme CCOMPARE du CPU (capteur du tick_rtos) */
+    {
+        static uint64_t qdiag_last_ns[4][MAX_NCCOMPARE];
+        static uint32_t qdiag_fire_cnt;
+        CPUState *cs = env_cpu(env);
+        uint64_t now = qemu_clock_get_ns(QEMU_CLOCK_VIRTUAL);
+        uint64_t delta = qdiag_last_ns[cs->cpu_index][i]
+                            ? (now - qdiag_last_ns[cs->cpu_index][i]) : 0;
+        fprintf(stderr, "[QDIAG] CCMPf cpu%d c%d fire n%u pc=%08x INTSET=%08x vclk=%llums delta=%uus\n",
+                cs->cpu_index, i, ++qdiag_fire_cnt, (unsigned)env->pc,
+                (unsigned)env->sregs[INTSET],
+                (unsigned long long)(now / 1000000), (unsigned)(delta / 1000));
+        qdiag_last_ns[cs->cpu_index][i] = now;
+    }
+
     qemu_set_irq(env->irq_inputs[env->config->timerint[i]], 1);
 }
 
