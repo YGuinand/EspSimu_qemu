@@ -80,16 +80,29 @@ void HELPER(update_ccompare)(CPUXtensaState *env, uint32_t i)
 {
     XtensaCPU *cpu = env_archcpu(env);
     uint64_t dcc;
+    int32_t sdelta;
 
     qatomic_and(&env->sregs[INTSET],
                ~(1u << env->config->timerint[i]));
     HELPER(update_ccount)(env);
-    dcc = (uint64_t)(env->sregs[CCOMPARE + i] - env->sregs[CCOUNT] - 1) + 1;
+    /*
+     * Fix : le calcul historique dcc = (uint64_t)(CCOMPARE - CCOUNT - 1) + 1
+     * empile en uint32 : si l'alarme est deja echue (CCOUNT >= CCOMPARE,
+     * typiquement au rattrapage de l'horloge virtuelle qui fait bondir
+     * CCOUNT), dcc devient ~2^32 ticks (~26,8 s a 160 MHz) et le timer est
+     * reprogramme loin dans le futur au lieu de tirer tout de suite.
+     * L'ISR tick de FreeRTOS, qui rattrape en re-ecrivant CCOMPARE derriere
+     * CCOUNT, reprogramme alors l'echeance a chaque iteration : l'alarme
+     * devient inatteignable et le CPU se fige. Semantique Xtensa : une
+     * alarme echue (CCOUNT >= CCOMPARE) doit tirer immediat ; le callback
+     * est one-shot, c'est la prochaine ecriture WSR.CCOMPARE qui rearme.
+     */
+    sdelta = (int32_t)(env->sregs[CCOMPARE + i] - env->sregs[CCOUNT]);
+    dcc = (sdelta <= 0) ? 0 : (uint64_t)sdelta;
 
-    /* QDIAG : wrap CCOMPARE derriere CCOUNT = alarme programmee ~2^32 ticks loin */
+    /* QDIAG : alarme echue (CCOUNT >= CCOMPARE) -> dcc=0us, tirage immediat */
     {
         int qdiag_cpu = env_cpu(env)->cpu_index;
-        int32_t sdelta = (int32_t)(env->sregs[CCOMPARE + i] - env->sregs[CCOUNT]);
         if (sdelta <= 0) {
             fprintf(stderr, "[QDIAG] WRAPc cpu%d c%d ccmp=%08x ccount=%08x "
                             "sdelta=%d dcc=%lluus pc=%08x vclk=%llums\n",
