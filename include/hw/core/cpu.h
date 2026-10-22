@@ -597,7 +597,10 @@ extern CPUTailQ cpus_queue;
 #define CPU_FOREACH_SAFE(cpu, next_cpu) \
     QTAILQ_FOREACH_SAFE_RCU(cpu, &cpus_queue, node, next_cpu)
 
-extern __thread CPUState *current_cpu;
+/* [QDIAG] tls_model global-dynamic : gcc 16 (Red Hat 16.2.1) generee local-exec
+ * (R_X86_64_TPOFF32) pour les __thread meme avec -fPIC ; incompatible avec
+ * le lien en libqemu-xtensa.so. L'attribut doit preceder toute declaration. */
+extern __thread CPUState *current_cpu __attribute__((tls_model("global-dynamic")));
 
 /**
  * qemu_tcg_mttcg_enabled:

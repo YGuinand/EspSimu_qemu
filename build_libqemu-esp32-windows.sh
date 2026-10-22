@@ -101,3 +101,8 @@ done
 echo "=== RESULTAT ==="
 file libqemu-xtensa.dll libqemu-riscv32.dll
 ls -la libqemu-xtensa.dll libqemu-riscv32.dll
+
+# Deposer dans le projet EspSimu voisin (c'est la que modele.cpp/paquet les cherche)
+if [ -d "$QDIR/../EspSimu/3rdparty/qemu/lib" ]; then
+  cp -v libqemu-xtensa.dll libqemu-riscv32.dll "$QDIR/../EspSimu/3rdparty/qemu/lib/"
+fi
