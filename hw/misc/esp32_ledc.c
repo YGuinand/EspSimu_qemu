@@ -3,6 +3,7 @@
 #include "qemu/log.h"
 #include "qapi/error.h"
 #include "hw/irq.h"
+#include "hw/resettable.h"
 #include "hw/misc/esp32_ledc.h"
 
 #define ESP32_LEDC_REGS_SIZE (A_LEDC_CONF_REG + 4)
@@ -150,6 +151,33 @@ static const MemoryRegionOps esp32_ledc_ops = {
         .endianness = DEVICE_LITTLE_ENDIAN,
 };
 
+/*
+ * Reset materiel : sur du vrai materiel, un reset systeme (RTC) purger le
+ * peripherique LEDC. Sans ce handler, les registres du canal (conf0, duty,
+ * resolution, timer et frequence) survivent a qemu_system_reset : apres un
+ * reset ou une mise hors tension le duty de l'ignition precedente reste
+ * expose a l'application qui l'interroge periodiquement, et les moteurs
+ * redemarrent avec l'ancienne consigne avant meme que le firmware ait
+ * reconfigure ses sorties PWM.
+ */
+static void esp32_ledc_reset_hold(Object *obj, ResetType type)
+{
+    Esp32LEDCState *s = ESP32_LEDC(obj);
+    int i;
+
+    s->conf_reg = 0;
+    for (i = 0; i < ESP32_LEDC_TIMER_CNT; i++) {
+        s->timer_conf_reg[i] = 0;
+        s->duty_res[i] = 0;
+        s->freq[i] = 0;
+    }
+    for (i = 0; i < ESP32_LEDC_CHANNEL_CNT; i++) {
+        s->channel_conf0_reg[i] = 0;
+        s->duty[i] = 0.0f;
+        led_set_intensity(&s->led[i], 0);
+    }
+}
+
 static void esp32_ledc_realize(DeviceState *dev, Error **errp)
 {
     Esp32LEDCState *s = ESP32_LEDC(dev);
@@ -175,7 +203,9 @@ static void esp32_ledc_init(Object *obj)
 static void esp32_ledc_class_init(ObjectClass *klass, void *data)
 {
     DeviceClass *dc = DEVICE_CLASS(klass);
+    ResettableClass *rc = RESETTABLE_CLASS(klass);
     dc->realize = esp32_ledc_realize;
+    rc->phases.hold = esp32_ledc_reset_hold;
 }
 
 static const TypeInfo esp32_ledc_info = {
