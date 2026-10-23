@@ -41,7 +41,6 @@ typedef struct Esp32TimgTimerState {
     uint64_t ns_base;
     Esp32TimgInterruptType int_type;
     QEMUTimer alarm_timer;
-    uint64_t last_fire_ns;              /* [QDIAG] dernier tir d'alarme */
 } Esp32TimgTimerState;
 
 typedef enum Esp32TimgWdtStageMode {

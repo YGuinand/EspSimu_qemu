@@ -40,26 +40,10 @@ void HELPER(update_ccount)(CPUXtensaState *env)
 {
     XtensaCPU *cpu = env_archcpu(env);
     uint64_t now = qemu_clock_get_ns(QEMU_CLOCK_VIRTUAL);
-    uint32_t prev = env->sregs[CCOUNT];
-    uint64_t prev_time = env->ccount_time;
 
     env->ccount_time = now;
     env->sregs[CCOUNT] = env->ccount_base +
         (uint32_t)clock_ns_to_ticks(cpu->clock, now - env->time_base);
-
-    /* QDIAG : saut de CCOUNT (rattrapage vclk) pour prouver le wrap CCOMPARE */
-    {
-        uint64_t d_us = (now - prev_time) / 1000;
-        if (d_us > 5000) {
-            fprintf(stderr, "[QDIAG] CCNTj cpu%d dt=%llums jump=%d ccount=%08x "
-                            "vclk=%llums\n",
-                    env_cpu(env)->cpu_index,
-                    (unsigned long long)(d_us / 1000),
-                    (int32_t)(env->sregs[CCOUNT] - prev),
-                    (unsigned)env->sregs[CCOUNT],
-                    (unsigned long long)(now / 1000000));
-        }
-    }
 }
 
 void HELPER(wsr_ccount)(CPUXtensaState *env, uint32_t v)
@@ -67,9 +51,6 @@ void HELPER(wsr_ccount)(CPUXtensaState *env, uint32_t v)
     int i;
     uint32_t delta;
 
-    fprintf(stderr, "[QDIAG] WSRcc cpu%d v=%08x pc=%08x vclk=%llums\n",
-            env_cpu(env)->cpu_index, v, (unsigned)env->pc,
-            (unsigned long long)(qemu_clock_get_ns(QEMU_CLOCK_VIRTUAL) / 1000000));
     HELPER(update_ccount)(env);
     delta = v - env->sregs[CCOUNT];
     env->ccount_base += v - env->sregs[CCOUNT];
@@ -115,10 +96,6 @@ void xtensa_ccount_rebase(CPUXtensaState *env)
     env->ccount_base = env->sregs[CCOUNT];
     env->time_base = now;
 
-    fprintf(stderr, "[QDIAG] CCREb cpu%d ccount=%08x vclk=%llums\n",
-            env_cpu(env)->cpu_index, (unsigned)env->sregs[CCOUNT],
-            (unsigned long long)(now / 1000000));
-
     for (i = 0; i < env->config->nccompare; ++i) {
         HELPER(update_ccompare)(env, i);
     }
@@ -147,49 +124,6 @@ void HELPER(update_ccompare)(CPUXtensaState *env, uint32_t i)
      */
     sdelta = (int32_t)(env->sregs[CCOMPARE + i] - env->sregs[CCOUNT]);
     dcc = (sdelta <= 0) ? 0 : (uint64_t)sdelta;
-
-    /* QDIAG : alarme echue (CCOUNT >= CCOMPARE) -> dcc=0us, tirage immediat */
-    {
-        int qdiag_cpu = env_cpu(env)->cpu_index;
-        if (sdelta <= 0) {
-            fprintf(stderr, "[QDIAG] WRAPc cpu%d c%d ccmp=%08x ccount=%08x "
-                            "sdelta=%d dcc=%lluus pc=%08x vclk=%llums\n",
-                    qdiag_cpu, i,
-                    (unsigned)env->sregs[CCOMPARE + i],
-                    (unsigned)env->sregs[CCOUNT],
-                    sdelta,
-                    (unsigned long long)(clock_ticks_to_ns(cpu->clock, dcc) / 1000),
-                    (unsigned)env->pc,
-                    (unsigned long long)(qemu_clock_get_ns(QEMU_CLOCK_VIRTUAL) / 1000000));
-        }
-    }
-
-    /* QDIAG : re-armes ecrites par le guest (cadence du tick_rtos) */
-    {
-        static uint32_t qdiag_arm_cnt;
-        static uint64_t qdiag_last_dcc[4][MAX_NCCOMPARE];
-        int qdiag_cpu = env_cpu(env)->cpu_index;
-        uint64_t old_dcc = qdiag_last_dcc[qdiag_cpu][i];
-        if (old_dcc != dcc) {
-            fprintf(stderr, "[QDIAG] CCMPa cpu%d c%d dcc=%lluus old=%lluus pc=%08x "
-                            "ccmp=%08x ccount=%08x sdelta=%d vclk=%llums\n",
-                    qdiag_cpu, i,
-                    (unsigned long long)(clock_ticks_to_ns(cpu->clock, dcc) / 1000),
-                    (unsigned long long)(clock_ticks_to_ns(cpu->clock, old_dcc) / 1000),
-                    (unsigned)env->pc,
-                    (unsigned)env->sregs[CCOMPARE + i],
-                    (unsigned)env->sregs[CCOUNT],
-                    sdelta,
-                    (unsigned long long)(qemu_clock_get_ns(QEMU_CLOCK_VIRTUAL) / 1000000));
-            qdiag_last_dcc[qdiag_cpu][i] = dcc;
-        } else if (++qdiag_arm_cnt % 256 == 0) {
-            fprintf(stderr, "[QDIAG] CCMPa cpu%d c%d dcc=%lluus (identique n%u) vclk=%llums\n",
-                    qdiag_cpu, i,
-                    (unsigned long long)(clock_ticks_to_ns(cpu->clock, dcc) / 1000),
-                    qdiag_arm_cnt,
-                    (unsigned long long)(qemu_clock_get_ns(QEMU_CLOCK_VIRTUAL) / 1000000));
-        }
-    }
 
     timer_mod(env->ccompare[i].timer,
               env->ccount_time + clock_ticks_to_ns(cpu->clock, dcc));

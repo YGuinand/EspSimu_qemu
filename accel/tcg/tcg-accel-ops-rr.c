@@ -25,7 +25,6 @@
 
 #include "qemu/osdep.h"
 #include "qemu/lockable.h"
-#include "qemu/timer.h"   /* [QDIAG] SCALE_MS pour le watchdog des CPU figes */
 #include "sysemu/tcg.h"
 #include "sysemu/replay.h"
 #include "sysemu/cpu-timers.h"
@@ -216,31 +215,6 @@ static void *rr_cpu_thread_fn(void *arg)
     cpu->exit_request = 1;
 
     while (1) {
-        /* QDIAG : surveillance des CPU figes (halted) trop longtemps */
-        {
-            static int64_t qdiag_halt_start[8];
-            static int64_t qdiag_last_watchdog;
-            int64_t now = qemu_clock_get_ns(QEMU_CLOCK_REALTIME);
-            CPUState *w;
-
-            CPU_FOREACH(w) {
-                if (w->cpu_index >= 8) {
-                    continue;
-                }
-                if (!w->halted) {
-                    qdiag_halt_start[w->cpu_index] = 0;
-                } else if (qdiag_halt_start[w->cpu_index] == 0) {
-                    qdiag_halt_start[w->cpu_index] = now;
-                } else if (now - qdiag_halt_start[w->cpu_index] > 800 * SCALE_MS &&
-                           now - qdiag_last_watchdog > 1000 * SCALE_MS) {
-                    fprintf(stderr, "[QDIAG] RR : cpu%d halted depuis %lld ms vclk=%llums\n",
-                            w->cpu_index,
-                            (long long)((now - qdiag_halt_start[w->cpu_index]) / SCALE_MS),
-                            (unsigned long long)(qemu_clock_get_ns(QEMU_CLOCK_VIRTUAL) / 1000000));
-                    qdiag_last_watchdog = now;
-                }
-            }
-        }
         /* Only used for icount_enabled() */
         int64_t cpu_budget = 0;
 

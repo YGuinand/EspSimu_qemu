@@ -11,7 +11,6 @@
 #include "qemu/osdep.h"
 #include "qemu/log.h"
 #include "qemu/error-report.h"
-#include "qemu/timer.h"   /* [QDIAG] horodatage des evenements de stall/reset */
 #include "qemu/units.h"
 #include "qapi/error.h"
 #include "hw/hw.h"
@@ -296,8 +295,6 @@ static void esp32_dig_reset(void *opaque, int n, int level)
 {
     Esp32SocState *s = ESP32_SOC(opaque);
     if (level) {
-        fprintf(stderr, "[QDIAG] dig_reset (RTC) vclk=%llums\n",
-                (unsigned long long)(qemu_clock_get_ns(QEMU_CLOCK_VIRTUAL) / 1000000));
         esp32_dport_clear_ill_trap_state(&s->dport);
         s->requested_reset = ESP32_SOC_RESET_DIG;
         qemu_system_reset_request(SHUTDOWN_CAUSE_GUEST_RESET);
@@ -308,8 +305,6 @@ static void esp32_cpu_reset(void* opaque, int n, int level)
 {
     Esp32SocState *s = ESP32_SOC(opaque);
     if (level) {
-        fprintf(stderr, "[QDIAG] cpu_reset GPIO cpu=%d vclk=%llums\n",
-                n, (unsigned long long)(qemu_clock_get_ns(QEMU_CLOCK_VIRTUAL) / 1000000));
         s->requested_reset = (n == 0) ? ESP32_SOC_RESET_PROCPU : ESP32_SOC_RESET_APPCPU;
         /* Use different cause for APP CPU so that its reset doesn't cause QEMU to exit,
          * when -no-reboot option is given.
@@ -324,8 +319,6 @@ static void esp32_timg_cpu_reset(void* opaque, int n, int level)
 {
     Esp32SocState *s = ESP32_SOC(opaque);
     if (level) {
-        fprintf(stderr, "[QDIAG] timg_wdt_cpu_reset cpu=%d vclk=%llums\n",
-                n, (unsigned long long)(qemu_clock_get_ns(QEMU_CLOCK_VIRTUAL) / 1000000));
         s->requested_reset = (n == 0) ? ESP32_SOC_RESET_PROCPU : ESP32_SOC_RESET_APPCPU;
         /* Use different cause for APP CPU so that its reset doesn't cause QEMU to exit,
          * when -no-reboot option is given.
@@ -340,8 +333,6 @@ static void esp32_timg_sys_reset(void* opaque, int n, int level)
 {
     Esp32SocState *s = ESP32_SOC(opaque);
     if (level) {
-        fprintf(stderr, "[QDIAG] timg_wdt_sys_reset vclk=%llums\n",
-                (unsigned long long)(qemu_clock_get_ns(QEMU_CLOCK_VIRTUAL) / 1000000));
         esp32_dport_clear_ill_trap_state(&s->dport);
         s->requested_reset = ESP32_SOC_RESET_DIG;
         for (int i = 0; i < ESP32_CPU_COUNT; ++i) {
@@ -363,12 +354,6 @@ static void esp32_soc_reset(DeviceState *dev)
     if (s->requested_reset == 0) {
         s->requested_reset = ESP32_SOC_RESET_ALL;
     }
-    fprintf(stderr, "[QDIAG] soc_reset requested=0x%x (rtc_stall=%d%d dport_stall=%d clkgate=%d runstall=%d/%d) vclk=%llums\n",
-            s->requested_reset,
-            s->rtc_cntl.cpu_stall_state[0], s->rtc_cntl.cpu_stall_state[1],
-            s->dport.appcpu_stall_state, s->dport.appcpu_clkgate_state,
-            s->cpu[0].env.runstall, s->cpu[1].env.runstall,
-            (unsigned long long)(qemu_clock_get_ns(QEMU_CLOCK_VIRTUAL) / 1000000));
     if (s->requested_reset & ESP32_SOC_RESET_RTC) {
         device_cold_reset(DEVICE(&s->rtc_cntl));
     }
@@ -430,12 +415,6 @@ static void esp32_cpu_stall(void* opaque, int n, int level)
     }
 
     if (stall != s->cpu[n].env.runstall) {
-        fprintf(stderr, "[QDIAG] cpu%d runstall %d->%d (rtc_stall=%d dport_stall=%d clkgate=%d pc=0x%08x ps=0x%08x vclk=%llums)\n",
-                n, s->cpu[n].env.runstall, stall,
-                s->rtc_cntl.cpu_stall_state[1],
-                s->dport.appcpu_stall_state, s->dport.appcpu_clkgate_state,
-                s->cpu[n].env.pc, s->cpu[n].env.sregs[PS],
-                (unsigned long long)(qemu_clock_get_ns(QEMU_CLOCK_VIRTUAL) / 1000000));
         xtensa_runstall(&s->cpu[n].env, stall);
     }
 }

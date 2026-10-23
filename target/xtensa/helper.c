@@ -27,7 +27,6 @@
 
 #include "qemu/osdep.h"
 #include "qemu/log.h"
-#include "qemu/timer.h"   /* [QDIAG] horodatage runstall */
 #include "cpu.h"
 #include "exec/exec-all.h"
 #include "gdbstub/helpers.h"
@@ -318,11 +317,6 @@ void xtensa_cpu_do_transaction_failed(CPUState *cs, hwaddr physaddr, vaddr addr,
 void xtensa_runstall(CPUXtensaState *env, bool runstall)
 {
     CPUState *cpu = env_cpu(env);
-
-    fprintf(stderr, "[QDIAG] xtensa_runstall : cpu%d halt %d->%d (runstall %d->%d) pc=0x%08x vclk=%llums\n",
-            cpu->cpu_index, cpu->halted, runstall,
-            env->runstall, runstall, env->pc,
-            (unsigned long long)(qemu_clock_get_ns(QEMU_CLOCK_VIRTUAL) / 1000000));
 
     env->runstall = runstall;
     cpu->halted = runstall;
