@@ -151,6 +151,16 @@ static void esp32_efuse_write(void *opaque, hwaddr addr,
     }
 
 
+/* eFuse de gravure usine pour la calibration ADC, absente d'un efuse vierge.
+ * IDF5 la lit pour caracteriser son schema LINE FITTING : sans elle, il tombe
+ * dans la branche default_vref que le coeur Arduino ne renseigne pas, donc
+ * adc_cali_create_scheme_line_fitting() echoue et analogReadMilliVolts()
+ * renvoie toujours 0. Grave le champ (typique d'une ESP32-D0WD post-2018) :
+ * ADC_VREF seul dans BLK0 w4 (bits [12:8]) ; un efuse utilisateur qui graverait
+ * deja ce champ reste intact. */
+#define ESP32_EFUSE_ADC_VREF_MASK       (0x1FU << 8)
+#define ESP32_EFUSE_ADC_VREF_USINE      (0x2U << 8)   /* +2 x 7 mV -> Vref = 1114 mV */
+
 static void esp32_efuse_read_op(Esp32EfuseState *s)
 {
     s->cmd_reg = EFUSE_READ;
@@ -165,6 +175,11 @@ static void esp32_efuse_read_op(Esp32EfuseState *s)
      if((!s->efuse_rd.blk0[1])&&(!s->efuse_rd.blk0[2])){
         s->efuse_rd.blk0[1] = 0x00c40a24;
         s->efuse_rd.blk0[2] = 0xfe1001;
+    }
+
+    /* Calibration usine ADC, comme sur une puce gravee par Espressif */
+    if (!(s->efuse_rd.blk0[4] & ESP32_EFUSE_ADC_VREF_MASK)) {
+        s->efuse_rd.blk0[4] |= ESP32_EFUSE_ADC_VREF_USINE;
     }
 
     memset(&s->efuse_rd_dis, 0, sizeof(s->efuse_rd_dis));
