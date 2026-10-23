@@ -245,6 +245,11 @@ static void esp32_clk_update(void* opaque, int n, int level)
     qdev_prop_set_int32(DEVICE(&s->frc_timer), "apb_freq", apb_clk_freq);
     qdev_prop_set_int32(DEVICE(&s->timg[0]), "apb_freq", apb_clk_freq);
     qdev_prop_set_int32(DEVICE(&s->timg[1]), "apb_freq", apb_clk_freq);
+    /* re-ancrer CCOUNT avant le changement de taux, sinon le temps ecoule est
+     * rejoue au nouveau taux et CCOUNT bondit de milliards de ticks (alarmes
+     * far-head = abandon du tick_rtos plusieurs secondes) */
+    xtensa_ccount_rebase(&s->cpu[0].env);
+    xtensa_ccount_rebase(&s->cpu[1].env);
     clock_update_hz(s->cpu[0].clock, cpu_clk_freq );
     clock_update_hz(s->cpu[1].clock, cpu_clk_freq );
 }

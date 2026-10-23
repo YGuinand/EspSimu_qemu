@@ -65,12 +65,60 @@ void HELPER(update_ccount)(CPUXtensaState *env)
 void HELPER(wsr_ccount)(CPUXtensaState *env, uint32_t v)
 {
     int i;
+    uint32_t delta;
 
     fprintf(stderr, "[QDIAG] WSRcc cpu%d v=%08x pc=%08x vclk=%llums\n",
             env_cpu(env)->cpu_index, v, (unsigned)env->pc,
             (unsigned long long)(qemu_clock_get_ns(QEMU_CLOCK_VIRTUAL) / 1000000));
     HELPER(update_ccount)(env);
+    delta = v - env->sregs[CCOUNT];
     env->ccount_base += v - env->sregs[CCOUNT];
+    /*
+     * Translater les CCOMPARE en attente du meme delta que la base recalee :
+     * les echeances relatives du guest sont preservees. Sur du vrai materiel
+     * le recalage RTC (esp_rtc_init) ne recale jamais le compteur de milliards
+     * de ticks ; en QEMU les deux calendriers divergent et sans translation,
+     * une alarme armee quelques microsecondes avant le recal (compare ~ancien
+     * count + 1 ms) se retrouve 'far-head' : sdelta +2 milliards de ticks,
+     * cadence du tick_rtos perdue des secondes apres le boot == lag vu en IHM.
+     */
+    for (i = 0; i < env->config->nccompare; ++i) {
+        env->sregs[CCOMPARE + i] += delta;
+        HELPER(update_ccompare)(env, i);
+    }
+}
+
+/*
+ * Changement de frequence de l'horloge CPU (machine esp32 / esp32-picsimlab) :
+ * re-ancrer le CCOUNT au moment du changement. Sans cela, HELPER(update_ccount)
+ * calcule CCOUNT = ccount_base + temps_ecoule_depuis_time_base (fixe au boot de
+ * la VM) ; apres clock_update_hz, tout le temps ecoule est rejoue au NOUVEAU
+ * taux : CCOUNT bondit instantanement de milliards de ticks. Une alarme
+ * CCOMPARE ecrite juste avant devient alors sdelta > 2 milliards de ticks
+ * (>= INT32_MAX en signe) : le tick_rtos FreeRTOS ne tire plus pendant des
+ * secondes (gel du guest vu en IHM apres le premier tour de loop), ou au
+ * contraire tempete d'alarmes echuees si le saut est en arriere. Sementique HW :
+ * au changement de frequence la VALEUR du compteur est conservee, seule la
+ * vitesse d'avance change ensuite ; les alarmes CCOMPARE en attente sont donc
+ * retimisees au nouveau taux (comme un WSR.CCOUNT aurait refait au WSR).
+ */
+void xtensa_ccount_rebase(CPUXtensaState *env)
+{
+    XtensaCPU *cpu = env_archcpu(env);
+    uint64_t now = qemu_clock_get_ns(QEMU_CLOCK_VIRTUAL);
+    int i;
+
+    /* la conversion utilise la frequence ENCORE courante (ancienne) : la valeur
+     * du compteur est conservee, seule la vitesse changera apres */
+    env->sregs[CCOUNT] = env->ccount_base +
+        (uint32_t)clock_ns_to_ticks(cpu->clock, now - env->time_base);
+    env->ccount_base = env->sregs[CCOUNT];
+    env->time_base = now;
+
+    fprintf(stderr, "[QDIAG] CCREb cpu%d ccount=%08x vclk=%llums\n",
+            env_cpu(env)->cpu_index, (unsigned)env->sregs[CCOUNT],
+            (unsigned long long)(now / 1000000));
+
     for (i = 0; i < env->config->nccompare; ++i) {
         HELPER(update_ccompare)(env, i);
     }
@@ -123,11 +171,15 @@ void HELPER(update_ccompare)(CPUXtensaState *env, uint32_t i)
         int qdiag_cpu = env_cpu(env)->cpu_index;
         uint64_t old_dcc = qdiag_last_dcc[qdiag_cpu][i];
         if (old_dcc != dcc) {
-            fprintf(stderr, "[QDIAG] CCMPa cpu%d c%d dcc=%lluus old=%lluus pc=%08x vclk=%llums\n",
+            fprintf(stderr, "[QDIAG] CCMPa cpu%d c%d dcc=%lluus old=%lluus pc=%08x "
+                            "ccmp=%08x ccount=%08x sdelta=%d vclk=%llums\n",
                     qdiag_cpu, i,
                     (unsigned long long)(clock_ticks_to_ns(cpu->clock, dcc) / 1000),
                     (unsigned long long)(clock_ticks_to_ns(cpu->clock, old_dcc) / 1000),
                     (unsigned)env->pc,
+                    (unsigned)env->sregs[CCOMPARE + i],
+                    (unsigned)env->sregs[CCOUNT],
+                    sdelta,
                     (unsigned long long)(qemu_clock_get_ns(QEMU_CLOCK_VIRTUAL) / 1000000));
             qdiag_last_dcc[qdiag_cpu][i] = dcc;
         } else if (++qdiag_arm_cnt % 256 == 0) {
