@@ -112,7 +112,7 @@ typedef struct {
 
 //prototypes
 void qemu_picsimlab_register_callbacks(void * arg);
-void qemu_picsimlab_set_apin(int chn,int value);
+void qemu_picsimlab_set_apin_mv(int chn,int mv);
 void qemu_picsimlab_set_pin(int pin,int value);
 uint32_t * qemu_picsimlab_get_internals(int cfg);
 uint32_t  qemu_picsimlab_get_TIOCM(void);
@@ -243,10 +243,13 @@ void qemu_picsimlab_set_pin(int pin,int value)
    //qemu_mutex_unlock_iothread ();
 }
 
-void qemu_picsimlab_set_apin(int chn,int value)
+void qemu_picsimlab_set_apin_mv(int chn,int mv)
 {
-   Esp32SensState *s = ESP32_SENS(&(global_s->sens));  
-   s->ADC_values[chn] = value;
+   Esp32SensState *s = ESP32_SENS(&(global_s->sens));
+   if (chn < 0 || chn > 31) return;      /* borne du tableau apin_mv */
+   if (mv < 0) mv = 0;                   /* EspSimu : tension injectee 0..3300 mV */
+   else if (mv > 3300) mv = 3300;
+   s->apin_mv[chn] = (int16_t)mv;
 }
 
 int qemu_picsimlab_flash_dump( int64_t offset, void *buf, int bytes)
