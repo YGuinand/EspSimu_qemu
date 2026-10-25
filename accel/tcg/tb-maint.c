@@ -316,7 +316,9 @@ typedef int PageForEachNext;
 
 #ifdef CONFIG_DEBUG_TCG
 
-static __thread GHashTable *ht_pages_locked_debug;
+/* [QDIAG] tls_model global-dynamic : meme raison que current_cpu ci-dessus
+ * (gcc 16 garde le modele local-exec sysnonyme pour un fichier partagé) */
+static __thread GHashTable *ht_pages_locked_debug __attribute__((tls_model("global-dynamic")));
 
 static void ht_pages_locked_debug_init(void)
 {

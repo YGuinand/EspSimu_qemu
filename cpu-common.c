@@ -121,7 +121,10 @@ CPUState *qemu_get_cpu(int index)
 }
 
 /* current CPU in the current thread. It is only valid inside cpu_exec() */
-__thread CPUState *current_cpu;
+/* [QDIAG] tls_model global-dynamic : gcc 16 sur cette machine genere du
+ * local-exec (R_X86_64_TPOFF32) pour __thread meme avec -fPIC, ce qui
+ * empeche tout lien du binaire en libqemu-xtensa.so partagée */
+__thread CPUState *current_cpu __attribute__((tls_model("global-dynamic")));
 
 struct qemu_work_item {
     QSIMPLEQ_ENTRY(qemu_work_item) node;

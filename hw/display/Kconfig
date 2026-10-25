@@ -141,6 +141,9 @@ config XLNX_DISPLAYPORT
 config DM163
     bool
 
+config ESP_RGB
+    bool
+
 config MAC_PVG_MMIO
     bool
     depends on MAC_PVG && AARCH64

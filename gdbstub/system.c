@@ -335,6 +335,8 @@ static void create_processes(GDBState *s)
     gdb_create_default_process(s);
 }
 
+extern GMainContext *g_main_context_default_l;
+
 bool gdbserver_start(const char *device, Error **errp)
 {
     Chardev *chr = NULL;
@@ -378,7 +380,7 @@ bool gdbserver_start(const char *device, Error **errp)
          * FIXME: it's a bit weird to allow using a mux chardev here
          * and implicitly setup a monitor. We may want to break this.
          */
-        chr = qemu_chr_new_noreplay("gdb", cs->str, true, NULL);
+        chr = qemu_chr_new_noreplay("gdb", cs->str, true, g_main_context_default_l);
         if (!chr) {
             error_setg(errp, "gdbstub: couldn't create chardev");
             return false;
@@ -392,7 +394,7 @@ bool gdbserver_start(const char *device, Error **errp)
 
         /* Initialize a monitor terminal for gdb */
         mon_chr = qemu_chardev_new(NULL, TYPE_CHARDEV_GDB,
-                                   NULL, NULL, &error_abort);
+                                   NULL, g_main_context_default_l, &error_abort);
         monitor_init_hmp(mon_chr, false, &error_abort);
     } else {
         qemu_chr_fe_deinit(&gdbserver_system_state.chr, true);
@@ -407,7 +409,7 @@ bool gdbserver_start(const char *device, Error **errp)
         qemu_chr_fe_set_handlers(&gdbserver_system_state.chr,
                                  gdb_chr_can_receive,
                                  gdb_chr_receive, gdb_chr_event,
-                                 NULL, &gdbserver_state, NULL, true);
+                                 NULL, &gdbserver_state, g_main_context_default_l, true);
     }
     gdbserver_state.state = chr ? RS_IDLE : RS_INACTIVE;
     gdbserver_system_state.mon_chr = mon_chr;

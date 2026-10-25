@@ -144,6 +144,8 @@
 
 #define MAX_VIRTIO_CONSOLES 1
 
+extern GMainContext *g_main_context_default_l;
+
 typedef struct BlockdevOptionsQueueEntry {
     BlockdevOptions *bdo;
     Location loc;
@@ -1219,7 +1221,7 @@ static int chardev_init_func(void *opaque, QemuOpts *opts, Error **errp)
 {
     Error *local_err = NULL;
 
-    if (!qemu_chr_new_from_opts(opts, NULL, &local_err)) {
+    if (!qemu_chr_new_from_opts(opts, g_main_context_default_l, &local_err)) {
         if (local_err) {
             error_propagate(errp, local_err);
             return -1;
@@ -1462,7 +1464,7 @@ static bool serial_parse(const char *devname, Error **errp)
         char label[32];
         snprintf(label, sizeof(label), "serial%d", index);
 
-        serial_hds[index] = qemu_chr_new_mux_mon(label, devname, NULL);
+        serial_hds[index] = qemu_chr_new_mux_mon(label, devname, g_main_context_default_l);
         if (!serial_hds[index]) {
             error_setg(errp, "could not connect serial device"
                        " to character backend '%s'", devname);
@@ -1494,7 +1496,7 @@ static bool parallel_parse(const char *devname, Error **errp)
         return false;
     }
     snprintf(label, sizeof(label), "parallel%d", index);
-    parallel_hds[index] = qemu_chr_new_mux_mon(label, devname, NULL);
+    parallel_hds[index] = qemu_chr_new_mux_mon(label, devname, g_main_context_default_l);
     if (!parallel_hds[index]) {
         error_setg(errp, "could not connect parallel device"
                    " to character backend '%s'", devname);
@@ -1508,7 +1510,7 @@ static bool debugcon_parse(const char *devname, Error **errp)
 {
     QemuOpts *opts;
 
-    if (!qemu_chr_new_mux_mon("debugcon", devname, NULL)) {
+    if (!qemu_chr_new_mux_mon("debugcon", devname, g_main_context_default_l)) {
         error_setg(errp, "invalid character backend '%s'", devname);
         return false;
     }

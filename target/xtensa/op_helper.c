@@ -49,9 +49,53 @@ void HELPER(update_ccount)(CPUXtensaState *env)
 void HELPER(wsr_ccount)(CPUXtensaState *env, uint32_t v)
 {
     int i;
+    uint32_t delta;
 
     HELPER(update_ccount)(env);
+    delta = v - env->sregs[CCOUNT];
     env->ccount_base += v - env->sregs[CCOUNT];
+    /*
+     * Translater les CCOMPARE en attente du meme delta que la base recalee :
+     * les echeances relatives du guest sont preservees. Sur du vrai materiel
+     * le recalage RTC (esp_rtc_init) ne recale jamais le compteur de milliards
+     * de ticks ; en QEMU les deux calendriers divergent et sans translation,
+     * une alarme armee quelques microsecondes avant le recal (compare ~ancien
+     * count + 1 ms) se retrouve 'far-head' : sdelta +2 milliards de ticks,
+     * cadence du tick_rtos perdue des secondes apres le boot == lag vu en IHM.
+     */
+    for (i = 0; i < env->config->nccompare; ++i) {
+        env->sregs[CCOMPARE + i] += delta;
+        HELPER(update_ccompare)(env, i);
+    }
+}
+
+/*
+ * Changement de frequence de l'horloge CPU (machine esp32 / esp32-picsimlab) :
+ * re-ancrer le CCOUNT au moment du changement. Sans cela, HELPER(update_ccount)
+ * calcule CCOUNT = ccount_base + temps_ecoule_depuis_time_base (fixe au boot de
+ * la VM) ; apres clock_update_hz, tout le temps ecoule est rejoue au NOUVEAU
+ * taux : CCOUNT bondit instantanement de milliards de ticks. Une alarme
+ * CCOMPARE ecrite juste avant devient alors sdelta > 2 milliards de ticks
+ * (>= INT32_MAX en signe) : le tick_rtos FreeRTOS ne tire plus pendant des
+ * secondes (gel du guest vu en IHM apres le premier tour de loop), ou au
+ * contraire tempete d'alarmes echuees si le saut est en arriere. Sementique HW :
+ * au changement de frequence la VALEUR du compteur est conservee, seule la
+ * vitesse d'avance change ensuite ; les alarmes CCOMPARE en attente sont donc
+ * retimisees au nouveau taux (comme un WSR.CCOUNT aurait refait au WSR).
+ */
+void xtensa_ccount_rebase(CPUXtensaState *env)
+{
+    XtensaCPU *cpu = env_archcpu(env);
+    uint64_t now = qemu_clock_get_ns(QEMU_CLOCK_VIRTUAL);
+    int i;
+
+    /* la conversion utilise la frequence ENCORE courante (ancienne) : la valeur
+     * du compteur est conservee, seule la vitesse changera apres */
+    env->sregs[CCOUNT] = env->ccount_base +
+        (uint32_t)clock_ns_to_ticks(cpu->clock, now - env->time_base);
+    env->ccount_base = env->sregs[CCOUNT];
+    env->time_base = now;
+
     for (i = 0; i < env->config->nccompare; ++i) {
         HELPER(update_ccompare)(env, i);
     }
@@ -61,11 +105,26 @@ void HELPER(update_ccompare)(CPUXtensaState *env, uint32_t i)
 {
     XtensaCPU *cpu = env_archcpu(env);
     uint64_t dcc;
+    int32_t sdelta;
 
     qatomic_and(&env->sregs[INTSET],
                ~(1u << env->config->timerint[i]));
     HELPER(update_ccount)(env);
-    dcc = (uint64_t)(env->sregs[CCOMPARE + i] - env->sregs[CCOUNT] - 1) + 1;
+    /*
+     * Fix : le calcul historique dcc = (uint64_t)(CCOMPARE - CCOUNT - 1) + 1
+     * empile en uint32 : si l'alarme est deja echue (CCOUNT >= CCOMPARE,
+     * typiquement au rattrapage de l'horloge virtuelle qui fait bondir
+     * CCOUNT), dcc devient ~2^32 ticks (~26,8 s a 160 MHz) et le timer est
+     * reprogramme loin dans le futur au lieu de tirer tout de suite.
+     * L'ISR tick de FreeRTOS, qui rattrape en re-ecrivant CCOMPARE derriere
+     * CCOUNT, reprogramme alors l'echeance a chaque iteration : l'alarme
+     * devient inatteignable et le CPU se fige. Semantique Xtensa : une
+     * alarme echue (CCOUNT >= CCOMPARE) doit tirer immediat ; le callback
+     * est one-shot, c'est la prochaine ecriture WSR.CCOMPARE qui rearme.
+     */
+    sdelta = (int32_t)(env->sregs[CCOMPARE + i] - env->sregs[CCOUNT]);
+    dcc = (sdelta <= 0) ? 0 : (uint64_t)sdelta;
+
     timer_mod(env->ccompare[i].timer,
               env->ccount_time + clock_ticks_to_ns(cpu->clock, dcc));
     env->yield_needed = 1;

@@ -549,6 +549,8 @@ struct CPUArchState {
     struct CPUWatchpoint *cpu_watchpoint[MAX_NDBREAK];
     /* Breakpoints for IBREAK registers */
     struct CPUBreakpoint *cpu_breakpoint[MAX_NIBREAK];
+    /* Pointer to any kind of extension of basic Xtensa CPU.*/
+    void* ext;
 };
 
 /**
@@ -642,6 +644,7 @@ static inline void xtensa_select_static_vectors(CPUXtensaState *env,
     env->static_vectors = n;
 }
 void xtensa_runstall(CPUXtensaState *env, bool runstall);
+void xtensa_ccount_rebase(CPUXtensaState *env);
 
 #define XTENSA_OPTION_BIT(opt) (((uint64_t)1) << (opt))
 #define XTENSA_OPTION_ALL (~(uint64_t)0)
