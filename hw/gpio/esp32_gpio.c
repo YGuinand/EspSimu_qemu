@@ -20,7 +20,7 @@
 #include "hw/irq.h"
 #include "hw/qdev-properties.h"
 #include "hw/gpio/esp32_gpio.h"
-#include "sysemu/runstate.h"
+#include "system/runstate.h"
 
 
 static uint64_t esp32_gpio_read(void *opaque, hwaddr addr, unsigned int size)

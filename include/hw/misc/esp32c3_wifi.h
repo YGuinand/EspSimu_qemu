@@ -3,7 +3,7 @@
 #include "hw/hw.h"
 #include "hw/registerfields.h"
 #include "hw/sysbus.h"
-#include "sysemu/sysemu.h"
+#include "system/system.h"
 #include "net/net.h"
 #include "esp32_wifi.h"
 

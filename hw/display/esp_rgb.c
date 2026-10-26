@@ -11,13 +11,13 @@
 #include "qemu/osdep.h"
 #include "qemu/module.h"
 #include "qapi/error.h"
-#include "sysemu/sysemu.h"
+#include "system/system.h"
 #include "hw/sysbus.h"
 #include "hw/irq.h"
 #include "hw/display/esp_rgb.h"
 #include "ui/console.h"
 #include "qemu/error-report.h"
-#include "sysemu/dma.h"
+#include "system/dma.h"
 
 #define RGB_WARNING 1
 #define RGB_DEBUG   0

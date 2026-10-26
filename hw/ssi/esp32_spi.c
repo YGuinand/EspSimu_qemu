@@ -11,7 +11,7 @@
 #include "qemu/osdep.h"
 #include "qemu/log.h"
 #include "qemu/module.h"
-#include "sysemu/sysemu.h"
+#include "system/system.h"
 #include "hw/hw.h"
 #include "hw/sysbus.h"
 #include "hw/registerfields.h"
@@ -20,7 +20,7 @@
 #include "hw/ssi/ssi.h"
 #include "hw/ssi/esp32_spi.h"
 #include "hw/misc/esp32_flash_enc.h"
-#include "exec/address-spaces.h"
+#include "system/address-spaces.h"
 
 
 enum {

@@ -4,7 +4,7 @@
 #include "hw/registerfields.h"
 #include "hw/sysbus.h"
 //#include "hw/misc/esp32_reg.h"
-#include "sysemu/sysemu.h"
+#include "system/system.h"
 #include "net/net.h"
 
 #define TYPE_ESP32_WIFI "esp32_wifi"

@@ -15,7 +15,7 @@
 #include "qemu/module.h"
 #include "qapi/error.h"
 #include "qemu/error-report.h"
-#include "sysemu/sysemu.h"
+#include "system/system.h"
 #include "chardev/char-fe.h"
 #include "hw/registerfields.h"
 #include "hw/sysbus.h"

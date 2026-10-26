@@ -20,7 +20,7 @@
 #include "hw/irq.h"
 #include "hw/qdev-properties.h"
 #include "hw/misc/esp32_iomux.h"
-#include "sysemu/runstate.h"
+#include "system/runstate.h"
 
 static uint64_t esp32_iomux_read(void *opaque, hwaddr addr, unsigned int size) {
     Esp32IomuxState *s = ESP32_IOMUX(opaque);

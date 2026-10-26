@@ -17,7 +17,7 @@
 #include "hw/registerfields.h"
 #include "hw/irq.h"
 #include "hw/qdev-properties.h"
-#include "sysemu/reset.h"
+#include "system/reset.h"
 #include "esp_cpu.h"
 
 #define BIT_SET(reg, bit)   ((reg) & BIT(bit))

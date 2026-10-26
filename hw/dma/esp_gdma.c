@@ -10,7 +10,7 @@
 
 #include "qemu/osdep.h"
 #include "qemu/error-report.h"
-#include "sysemu/dma.h"
+#include "system/dma.h"
 #include "hw/sysbus.h"
 #include "hw/irq.h"
 #include "hw/dma/esp_gdma.h"

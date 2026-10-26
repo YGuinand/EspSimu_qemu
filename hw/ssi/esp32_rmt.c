@@ -11,7 +11,7 @@
 #include "qemu/osdep.h"
 #include "qemu/log.h"
 #include "qemu/module.h"
-#include "sysemu/sysemu.h"
+#include "system/system.h"
 #include "hw/hw.h"
 #include "hw/sysbus.h"
 #include "hw/registerfields.h"
