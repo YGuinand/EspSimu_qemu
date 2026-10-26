@@ -533,8 +533,6 @@ static const MemoryRegionOps dwc_sdmmc_ops = {
 
 
 
-static const Property dwc_sdmmc_properties[] = {
-};
 
 static void dwc_sdmmc_init(Object *obj)
 {
@@ -572,7 +570,6 @@ static void dwc_sdmmc_class_init(ObjectClass *klass, const void *data)
     DeviceClass *dc = DEVICE_CLASS(klass);
 
     dc->legacy_reset = dwc_sdmmc_reset;
-    device_class_set_props(dc, dwc_sdmmc_properties);
 }
 
 static TypeInfo dwc_sdmmc_info = {

@@ -25,8 +25,6 @@
 #include "net/can_emu.h"
 
 /* Device properties */
-static const Property esp32_twai_properties[] = {
-};
 
 /* Migration state description */
 static const VMStateDescription vmstate_esp32_twai = {
@@ -159,7 +157,6 @@ static void esp32_twai_class_init(ObjectClass *klass, const void *data)
     rc->phases.hold = esp32_twai_reset;
     dc->realize = esp32_twai_realize;
     dc->vmsd = &vmstate_esp32_twai;
-    device_class_set_props(dc, esp32_twai_properties);
 }
 
 static const TypeInfo esp32_twai_type_info = {

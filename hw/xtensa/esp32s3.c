@@ -552,15 +552,12 @@ static void esp32s3_soc_init(Object *obj)
     object_initialize_child(obj, "sdmmc", &s->sdmmc, TYPE_DWC_SDMMC);
 }
 
-static const Property esp32s3_soc_properties[] = {
-};
 
 static void esp32s3_soc_class_init(ObjectClass *klass, const void *data)
 {
     DeviceClass *dc = DEVICE_CLASS(klass);
 
     dc->realize = esp32s3_soc_realize;
-    device_class_set_props(dc, esp32s3_soc_properties);
 }
 
 static const TypeInfo esp32s3_soc_info = {

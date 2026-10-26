@@ -62,6 +62,8 @@ gcry_error_t gcry_cipher_setctr(gcry_cipher_hd_t hd, const void *ctr,
                                 size_t ctrlen);
 gcry_error_t gcry_cipher_encrypt(gcry_cipher_hd_t hd, void *out, size_t outsz,
                                  const void *in, size_t insz);
+gcry_error_t gcry_cipher_decrypt(gcry_cipher_hd_t hd, void *out, size_t outsz,
+                                 const void *in, size_t insz);
 
 /* messages d'erreur factices (les .c lignée ne font qu'afficher) */
 const char *gcry_strerror(gcry_error_t err);

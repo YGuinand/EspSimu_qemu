@@ -219,8 +219,6 @@ static void esp32_rmt_init(Object *obj)
     s->rmt = ssi_create_bus(DEVICE(s), "rmt");
 }
 
-static const Property esp32_rmt_properties[] = {
-};
 
 static void esp32_rmt_class_init(ObjectClass *klass, const void *data)
 {
@@ -228,7 +226,6 @@ static void esp32_rmt_class_init(ObjectClass *klass, const void *data)
     DeviceClass *dc = DEVICE_CLASS(klass);
 
     dc->realize = esp32_rmt_realize;
-    device_class_set_props(dc, esp32_rmt_properties);
     ResettableClass *rc = RESETTABLE_CLASS(klass);
     resettable_class_set_parent_phases(rc, esp32_rmt_reset_enter, NULL, NULL, &rp);
 }

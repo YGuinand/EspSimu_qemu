@@ -353,71 +353,6 @@ static void mb_cpu_initfn(Object *obj)
     object_property_add_alias(obj, "little-endian", obj, "endianness");
 }
 
-static const Property mb_properties[] = {
-    /*
-     * Following properties are used by Xilinx DTS conversion tool
-     * do not rename them.
-     */
-    DEFINE_PROP_UINT32("base-vectors", MicroBlazeCPU, cfg.base_vectors, 0),
-    DEFINE_PROP_BOOL("use-stack-protection", MicroBlazeCPU, cfg.stackprot,
-                     false),
-    /*
-     * This is the C_ADDR_SIZE synth-time configuration option of the
-     * MicroBlaze cores. Supported values range between 32 and 64.
-     *
-     * When set to > 32, 32bit MicroBlaze can emit load/stores
-     * with extended addressing.
-     */
-    DEFINE_PROP_UINT8("addr-size", MicroBlazeCPU, cfg.addr_size, 32),
-    /* If use-fpu > 0 - FPU is enabled
-     * If use-fpu = 2 - Floating point conversion and square root instructions
-     *                  are enabled
-     */
-    DEFINE_PROP_UINT8("use-fpu", MicroBlazeCPU, cfg.use_fpu, 2),
-    /* If use-hw-mul > 0 - Multiplier is enabled
-     * If use-hw-mul = 2 - 64-bit multiplier is enabled
-     */
-    DEFINE_PROP_UINT8("use-hw-mul", MicroBlazeCPU, cfg.use_hw_mul, 2),
-    DEFINE_PROP_BOOL("use-barrel", MicroBlazeCPU, cfg.use_barrel, true),
-    DEFINE_PROP_BOOL("use-div", MicroBlazeCPU, cfg.use_div, true),
-    DEFINE_PROP_BOOL("use-msr-instr", MicroBlazeCPU, cfg.use_msr_instr, true),
-    DEFINE_PROP_BOOL("use-pcmp-instr", MicroBlazeCPU, cfg.use_pcmp_instr, true),
-    DEFINE_PROP_BOOL("use-mmu", MicroBlazeCPU, cfg.use_mmu, true),
-    /*
-     * use-non-secure enables/disables the use of the non_secure[3:0] signals.
-     * It is a bitfield where 1 = non-secure for the following bits and their
-     * corresponding interfaces:
-     * 0x1 - M_AXI_DP
-     * 0x2 - M_AXI_IP
-     * 0x4 - M_AXI_DC
-     * 0x8 - M_AXI_IC
-     */
-    DEFINE_PROP_UINT8("use-non-secure", MicroBlazeCPU, cfg.use_non_secure, 0),
-    DEFINE_PROP_BOOL("dcache-writeback", MicroBlazeCPU, cfg.dcache_writeback,
-                     false),
-    DEFINE_PROP_BOOL("endianness", MicroBlazeCPU, cfg.endi, false),
-    /* Enables bus exceptions on failed data accesses (load/stores).  */
-    DEFINE_PROP_BOOL("dopb-bus-exception", MicroBlazeCPU,
-                     cfg.dopb_bus_exception, false),
-    /* Enables bus exceptions on failed instruction fetches.  */
-    DEFINE_PROP_BOOL("iopb-bus-exception", MicroBlazeCPU,
-                     cfg.iopb_bus_exception, false),
-    DEFINE_PROP_BOOL("ill-opcode-exception", MicroBlazeCPU,
-                     cfg.illegal_opcode_exception, false),
-    DEFINE_PROP_BOOL("div-zero-exception", MicroBlazeCPU,
-                     cfg.div_zero_exception, false),
-    DEFINE_PROP_BOOL("unaligned-exceptions", MicroBlazeCPU,
-                     cfg.unaligned_exceptions, false),
-    DEFINE_PROP_BOOL("opcode-0x0-illegal", MicroBlazeCPU,
-                     cfg.opcode_0_illegal, false),
-    DEFINE_PROP_STRING("version", MicroBlazeCPU, cfg.version),
-    DEFINE_PROP_UINT8("pvr", MicroBlazeCPU, cfg.pvr, C_PVR_FULL),
-    DEFINE_PROP_UINT8("pvr-user1", MicroBlazeCPU, cfg.pvr_user1, 0),
-    DEFINE_PROP_UINT32("pvr-user2", MicroBlazeCPU, cfg.pvr_user2, 0),
-    /*
-     * End of properties reserved by Xilinx DTS conversion tool.
-     */
-};
 
 static ObjectClass *mb_cpu_class_by_name(const char *cpu_model)
 {
@@ -480,7 +415,6 @@ static void mb_cpu_class_init(ObjectClass *oc, const void *data)
     dc->vmsd = &vmstate_mb_cpu;
     cc->sysemu_ops = &mb_sysemu_ops;
 #endif
-    device_class_set_props(dc, mb_properties);
     cc->gdb_core_xml_file = "microblaze-core.xml";
 
     cc->disas_set_info = mb_disas_set_info;

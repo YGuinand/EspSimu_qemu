@@ -26,6 +26,7 @@ struct esp_gcipher {
     int algo;
     int mode;
     AES_KEY ek;
+    AES_KEY dk;
     uint8_t iv[16];
     uint8_t ctr[16];
 };
@@ -381,8 +382,12 @@ void gcry_mpi_powm(gcry_mpi_t res, const gcry_mpi_t x, const gcry_mpi_t y,
 int gcry_mpi_invm(gcry_mpi_t a, const gcry_mpi_t r, const gcry_mpi_t m)
 {
     /* Euclide étendu : cherche t tel que r*t ≡ 1 (mod m). */
-    struct esp_mpi A, B, X0, X1, Q, R, Tsub, tmp;
-    esp_mpi_cpy(&A, (const struct esp_mpi *)m);
+    struct esp_mpi A, B, Mv, X0, X1, Q, R, Tsub, tmp;
+    esp_mpi_cpy(&Mv, (const struct esp_mpi *)m);
+    if (!Mv.n) {
+        return 0; /* module nul : non inversible */
+    }
+    esp_mpi_cpy(&A, &Mv);
     esp_mpi_cpy(&B, (const struct esp_mpi *)r);
     esp_mpi_zero(&X0);
     esp_mpi_zero(&X1);
@@ -395,7 +400,7 @@ int gcry_mpi_invm(gcry_mpi_t a, const gcry_mpi_t r, const gcry_mpi_t m)
         /* X_next = X0 - tmp (mod m) ; on reste non négatif */
         if (esp_mpi_cmp(&tmp, &X0) > 0) {
             esp_mpi_sub(&Tsub, &tmp, &X0);   /* diff = tmp - X0 < m */
-            esp_mpi_sub(&Tsub, &M, &Tsub);   /* m - diff ≡ -diff (mod m) */
+            esp_mpi_sub(&Tsub, &Mv, &Tsub);  /* m - diff ≡ -diff (mod m) */
         } else {
             esp_mpi_sub(&Tsub, &X0, &tmp);
         }
@@ -470,6 +475,11 @@ gcry_error_t gcry_cipher_setkey(gcry_cipher_hd_t hd, const void *key,
     if (AES_set_encrypt_key(key, bits, &g->ek) < 0) {
         return (gcry_error_t)-3;
     }
+    /* les usages lignée (esp_aes decrypt) dérivent la clé inverse de la même
+     * clé : gcrypt gère les deux sens depuis un seul setkey */
+    if (AES_set_decrypt_key(key, bits, &g->dk) < 0) {
+        return (gcry_error_t)-3;
+    }
     return 0;
 }
 
@@ -499,8 +509,8 @@ gcry_error_t gcry_cipher_setctr(gcry_cipher_hd_t hd, const void *ctr,
     return 0;
 }
 
-gcry_error_t gcry_cipher_encrypt(gcry_cipher_hd_t hd, void *out, size_t outsz,
-                                 const void *in, size_t insz)
+static gcry_error_t esp_cipher_op(gcry_cipher_hd_t hd, void *out, size_t outsz,
+                                  const void *in, size_t insz, int decrypt)
 {
     struct esp_gcipher *g = (struct esp_gcipher *)hd;
     if (!g || !out) {
@@ -515,6 +525,7 @@ gcry_error_t gcry_cipher_encrypt(gcry_cipher_hd_t hd, void *out, size_t outsz,
     }
 
     uint8_t blk[16];
+    uint8_t cbc[16];
     const uint8_t *src = in;
     uint8_t *dst = out;
     size_t off = 0;
@@ -525,7 +536,11 @@ gcry_error_t gcry_cipher_encrypt(gcry_cipher_hd_t hd, void *out, size_t outsz,
             return (gcry_error_t)-3;
         }
         for (off = 0; off + 16 <= insz; off += 16) {
-            AES_encrypt(src + off, dst + off, &g->ek);
+            if (decrypt) {
+                AES_decrypt(src + off, dst + off, &g->dk);
+            } else {
+                AES_encrypt(src + off, dst + off, &g->ek);
+            }
         }
         break;
     case GCRY_CIPHER_MODE_CBC:
@@ -533,11 +548,21 @@ gcry_error_t gcry_cipher_encrypt(gcry_cipher_hd_t hd, void *out, size_t outsz,
             return (gcry_error_t)-3;
         }
         for (off = 0; off + 16 <= insz; off += 16) {
-            for (int i = 0; i < 16; i++) {
-                blk[i] = src[off + i] ^ g->iv[i];
+            if (decrypt) {
+                /* P_i = DEC(C_i) ^ C_(i-1) ; en-place safe : C_i sauvegardé */
+                memcpy(cbc, src + off, 16);
+                AES_decrypt(cbc, blk, &g->dk);
+                for (int i = 0; i < 16; i++) {
+                    dst[off + i] = blk[i] ^ g->iv[i];
+                }
+                memcpy(g->iv, cbc, 16);
+            } else {
+                for (int i = 0; i < 16; i++) {
+                    blk[i] = src[off + i] ^ g->iv[i];
+                }
+                AES_encrypt(blk, dst + off, &g->ek);
+                memcpy(g->iv, dst + off, 16);
             }
-            AES_encrypt(blk, dst + off, &g->ek);
-            memcpy(g->iv, dst + off, 16);
         }
         break;
     case GCRY_CIPHER_MODE_CTR:
@@ -583,4 +608,18 @@ gcry_error_t gcry_cipher_encrypt(gcry_cipher_hd_t hd, void *out, size_t outsz,
     }
 
     return 0;
+}
+
+/* CTR/OFB/CFB/CFB8 sont symétriques : decrypt == encrypt ; ECB/CBC passent
+ * par la clé inverse (dk). */
+gcry_error_t gcry_cipher_encrypt(gcry_cipher_hd_t hd, void *out, size_t outsz,
+                                 const void *in, size_t insz)
+{
+    return esp_cipher_op(hd, out, outsz, in, insz, 0);
+}
+
+gcry_error_t gcry_cipher_decrypt(gcry_cipher_hd_t hd, void *out, size_t outsz,
+                                 const void *in, size_t insz)
+{
+    return esp_cipher_op(hd, out, outsz, in, insz, 1);
 }

@@ -256,8 +256,6 @@ static void esp32c3_cache_init(Object *obj)
     sysbus_init_mmio(sbd, &s->iomem);
 }
 
-static const Property esp32c3_cache_properties[] = {
-};
 
 static void esp32c3_cache_class_init(ObjectClass *klass, const void *data)
 {
@@ -266,7 +264,6 @@ static void esp32c3_cache_class_init(ObjectClass *klass, const void *data)
 
     rc->phases.hold = esp32c3_cache_reset_hold;
     dc->realize = esp32c3_cache_realize;
-    device_class_set_props(dc, esp32c3_cache_properties);
 }
 
 static const TypeInfo esp32c3_cache_info = {
