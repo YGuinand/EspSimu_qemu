@@ -215,7 +215,7 @@ static void esp32_frc_timer_init(Object *obj)
     s->has_alarm = true;
 }
 
-static Property esp32_frc_timer_properties[] = {
+static const Property esp32_frc_timer_properties[] = {
 };
 
 static void esp32_frc_timer_class_init(ObjectClass *klass, const void *data)

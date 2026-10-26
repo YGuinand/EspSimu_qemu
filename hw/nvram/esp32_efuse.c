@@ -297,7 +297,7 @@ static void esp32_efuse_init(Object *obj)
     memset(&s->efuse_wr, 0, sizeof(s->efuse_wr));
 }
 
-static Property esp32_efuse_properties[] = {
+static const Property esp32_efuse_properties[] = {
     DEFINE_PROP_DRIVE("drive", Esp32EfuseState, blk),
 };
 

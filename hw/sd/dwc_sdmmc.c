@@ -533,7 +533,7 @@ static const MemoryRegionOps dwc_sdmmc_ops = {
 
 
 
-static Property dwc_sdmmc_properties[] = {
+static const Property dwc_sdmmc_properties[] = {
 };
 
 static void dwc_sdmmc_init(Object *obj)

@@ -215,7 +215,7 @@ static void esp32_rtc_cntl_init(Object *obj)
     esp32_rtc_update_clk(s);
 }
 
-static Property esp32_rtc_cntl_properties[] = {
+static const Property esp32_rtc_cntl_properties[] = {
 };
 
 static void esp32_rtc_cntl_class_init(ObjectClass *klass, const void *data)

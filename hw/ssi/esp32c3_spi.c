@@ -453,7 +453,7 @@ static void esp32c3_spi_init(Object *obj)
     qdev_init_gpio_out_named(DEVICE(s), &s->cs_gpio[0], SSI_GPIO_CS, ESP32C3_SPI_CS_COUNT);
 }
 
-static Property esp32c3_spi_properties[] = {
+static const Property esp32c3_spi_properties[] = {
 };
 
 static void esp32c3_spi_class_init(ObjectClass *klass, const void *data)

@@ -260,7 +260,7 @@ static void esp32c3_intmatrix_init(Object *obj)
 }
 
 
-static Property esp32c3_intmatrix_properties[] = {
+static const Property esp32c3_intmatrix_properties[] = {
     DEFINE_PROP_LINK("cpu", ESP32C3IntMatrixState, cpu, TYPE_ESP_RISCV_CPU, EspRISCVCPU*),
 };
 

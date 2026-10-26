@@ -946,7 +946,7 @@ static void esp32_soc_init(Object *obj)
     qdev_init_gpio_in_named(DEVICE(s), esp32_timg_sys_reset, ESP32_TIMG_WDT_SYS_RESET_GPIO, 2);
 }
 
-static Property esp32_soc_properties[] = {
+static const Property esp32_soc_properties[] = {
 };
 
 static void esp32_soc_class_init(ObjectClass *klass, const void *data)

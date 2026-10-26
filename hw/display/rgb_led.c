@@ -166,7 +166,7 @@ static void rgbled_reset(DeviceState *obj)
 }
 
 
-static Property rgb_led_properties[] = {
+static const Property rgb_led_properties[] = {
     DEFINE_PROP_INT32("width", RgbledState, width, 16),
     DEFINE_PROP_INT32("height", RgbledState, height, 16),
 };

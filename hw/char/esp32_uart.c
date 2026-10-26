@@ -405,7 +405,7 @@ static void esp32_uart_init(Object *obj)
 }
 
 
-static Property esp32_uart_properties[] = {
+static const Property esp32_uart_properties[] = {
     DEFINE_PROP_CHR("chardev", ESP32UARTState, chr),
 };
 

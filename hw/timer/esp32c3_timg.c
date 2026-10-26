@@ -726,7 +726,7 @@ static void esp32c3_timg_init(Object *obj)
     esp32c3_timg_reset_enter((Object*) s, 0);
 }
 
-static Property esp32c3_timg_properties[] = {
+static const Property esp32c3_timg_properties[] = {
     DEFINE_PROP_BOOL("wdt_disable", ESP32C3TimgState, wdt_disable, false),
 };
 

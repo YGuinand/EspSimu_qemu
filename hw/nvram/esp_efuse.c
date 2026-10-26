@@ -630,7 +630,7 @@ static void esp_efuse_init(Object *obj)
     timer_init_ns(&s->op_timer, QEMU_CLOCK_VIRTUAL, esp_efuse_timer_cb, s);
 }
 
-static Property esp_efuse_properties[] = {
+static const Property esp_efuse_properties[] = {
     DEFINE_PROP_DRIVE("drive", ESPEfuseState, blk),
 };
 

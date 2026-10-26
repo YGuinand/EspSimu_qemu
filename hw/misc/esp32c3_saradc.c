@@ -122,7 +122,7 @@ static void esp32c3_saradc_reset_enter(Object *obj, ResetType type)
     memset(s->mem, 0, sizeof(s->mem));
 }
 
-static void esp32c3_saradc_class_init(ObjectClass * klass, void * data)
+static void esp32c3_saradc_class_init(ObjectClass *klass, const void *data)
 {
     ResettablePhases rp;
     //DeviceClass * dc = DEVICE_CLASS(klass);

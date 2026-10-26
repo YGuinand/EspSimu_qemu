@@ -62,7 +62,7 @@ static void esp32_crosscore_int_init(Object *obj)
 
 }
 
-static Property esp32_crosscore_int_properties[] = {
+static const Property esp32_crosscore_int_properties[] = {
     DEFINE_PROP_INT32("n_irqs", Esp32CrosscoreInt, n_irqs, 4),
 };
 

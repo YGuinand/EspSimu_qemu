@@ -822,7 +822,7 @@ static void esp_timg_init(Object *obj)
     esp_timg_reset_hold(obj, RESET_TYPE_COLD);
 }
 
-static Property esp_timg_properties[] = {
+static const Property esp_timg_properties[] = {
     DEFINE_PROP_BOOL("wdt_disable", ESPTimgState, wdt_disable, false),
 };
 

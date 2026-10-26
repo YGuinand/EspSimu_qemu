@@ -930,7 +930,7 @@ uint64_t esp_gdma_read_register(ESPGdmaState* s, DmaRegister reg)
 
 
 
-static Property esp_gdma_properties[] = {
+static const Property esp_gdma_properties[] = {
     DEFINE_PROP_LINK("soc_mr", ESPGdmaState, soc_mr, TYPE_MEMORY_REGION, MemoryRegion*),
 };
 

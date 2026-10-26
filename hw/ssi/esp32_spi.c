@@ -508,7 +508,7 @@ static void esp32_spi_init(Object *obj)
     qdev_init_gpio_out_named(DEVICE(s), &s->cs_gpio[0], SSI_GPIO_CS, ESP32_SPI_CS_COUNT);
 }
 
-static Property esp32_spi_properties[] = {
+static const Property esp32_spi_properties[] = {
     DEFINE_PROP_BOOL("xfer_32_bits",Esp32SpiState,xfer_32_bits,false),
     DEFINE_PROP_BOOL("use_cs",Esp32SpiState,use_cs,false),
 };

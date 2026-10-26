@@ -220,7 +220,7 @@ static void esp32C3_wifi_realize(DeviceState *dev, Error **errp)
     Esp32_WLAN_setup_ap(dev, s);
     
 }
-static Property esp32C3_wifi_properties[] = {
+static const Property esp32C3_wifi_properties[] = {
     DEFINE_NIC_PROPERTIES(Esp32WifiState, conf),
 };
 

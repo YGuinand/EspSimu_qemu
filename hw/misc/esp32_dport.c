@@ -453,7 +453,7 @@ static void esp32_dport_init(Object *obj)
     qdev_init_gpio_out_named(DEVICE(sbd), &s->flash_dec_en_gpio, ESP32_DPORT_FLASH_DEC_EN_GPIO, 1);
 }
 
-static Property esp32_dport_properties[] = {
+static const Property esp32_dport_properties[] = {
     DEFINE_PROP_DRIVE("flash", Esp32DportState, flash_blk),
     DEFINE_PROP_BOOL("has_psram", Esp32DportState, has_psram, false),
 };

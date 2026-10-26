@@ -634,7 +634,7 @@ static void esp32_timg_init(Object *obj)
     qdev_init_gpio_out_named(DEVICE(sbd), &s->wdt_sys_reset_req, ESP32_TIMG_WDT_SYS_RESET_GPIO, 1);
 }
 
-static Property esp32_timg_properties[] = {
+static const Property esp32_timg_properties[] = {
     DEFINE_PROP_BOOL("wdt_disable", Esp32TimgState, wdt_disable, false),
 };
 

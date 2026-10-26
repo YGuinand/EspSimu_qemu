@@ -487,7 +487,7 @@ static void psram_realize(SSIPeripheral *ss, Error **errp)
     s->state = ST_IDLE;
 }
 
-static Property psram_properties[] = {
+static const Property psram_properties[] = {
     DEFINE_PROP_BOOL("is_octal", SsiPsramState, is_octal, false),
     DEFINE_PROP_UINT32("size_mbytes", SsiPsramState, size_mbytes, 4),
 };

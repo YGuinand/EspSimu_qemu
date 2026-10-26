@@ -25,7 +25,7 @@
 #include "net/can_emu.h"
 
 /* Device properties */
-static Property esp32_twai_properties[] = {
+static const Property esp32_twai_properties[] = {
 };
 
 /* Migration state description */

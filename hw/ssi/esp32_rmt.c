@@ -219,7 +219,7 @@ static void esp32_rmt_init(Object *obj)
     s->rmt = ssi_create_bus(DEVICE(s), "rmt");
 }
 
-static Property esp32_rmt_properties[] = {
+static const Property esp32_rmt_properties[] = {
 };
 
 static void esp32_rmt_class_init(ObjectClass *klass, const void *data)

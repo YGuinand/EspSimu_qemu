@@ -287,7 +287,7 @@ static void esp32_gpio_init(Object *obj)
     s->gpio_in1 = 0x8;
 }
 
-static Property esp32_gpio_properties[] = {
+static const Property esp32_gpio_properties[] = {
     /* The strap_mode needs to be explicitly set in the instance init, thus, set
      * the default value to 0. */
     DEFINE_PROP_UINT32("strap_mode", Esp32GpioState, strap_mode, 0),

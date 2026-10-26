@@ -313,7 +313,7 @@ static void esp_cpu_init(Object *obj)
     };
 }
 
-static Property riscv_harts_props[] = {
+static const Property riscv_harts_props[] = {
     DEFINE_PROP_UINT32("hartid-base", EspRISCVCPU, hartid_base, 0),
 };
 

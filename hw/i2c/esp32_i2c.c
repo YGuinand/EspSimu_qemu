@@ -337,7 +337,7 @@ static void esp32_i2c_init(Object * obj)
     s->model = I2C_MODEL_ESP32;
 }
 
-static void esp32_i2c_class_init(ObjectClass * klass, void * data)
+static void esp32_i2c_class_init(ObjectClass *klass, const void *data)
 {
     ResettableClass *rc = RESETTABLE_CLASS(klass);
     rc->phases.hold = esp32_i2c_reset_hold;
