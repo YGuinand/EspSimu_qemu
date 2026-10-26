@@ -17,7 +17,7 @@
 #include "hw/boards.h"
 #include "hw/misc/esp_rsa.h"
 #include "hw/irq.h"
-#include <gcrypt.h>
+#include "esp_gcrypt_shim.h"
 
 #define ESP_RSA_REGS_SIZE (A_RSA_DATE_REG + 4)
 

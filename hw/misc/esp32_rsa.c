@@ -16,7 +16,7 @@
 #include "hw/sysbus.h"
 #include "hw/boards.h"
 #include "hw/misc/esp32_rsa.h"
-#include <gcrypt.h>
+#include "esp_gcrypt_shim.h"
 
 
 #define ESP32_RSA_REGS_SIZE (A_RSA_QUERY_CLEAN_REG + 4)

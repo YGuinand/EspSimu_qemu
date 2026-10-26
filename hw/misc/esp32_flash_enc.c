@@ -7,7 +7,7 @@
  * it under the terms of the GNU General Public License version 2 or
  * (at your option) any later version.
  */
-#include <gcrypt.h>
+#include "esp_gcrypt_shim.h"
 #include "qemu/osdep.h"
 #include "hw/hw.h"
 #include "hw/sysbus.h"

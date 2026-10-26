@@ -200,29 +200,25 @@ system_ss.add(when: 'CONFIG_XTENSA_ESP32S3', if_true: files(
   'esp32s3_hmac.c'
 ))
 
-if gcrypt.found()
-  system_ss.add(when: [gcrypt, 'CONFIG_XTENSA_ESP32'], if_true: files(
-    'esp32_rsa.c',
-  ))
-  system_ss.add(when: [gcrypt, 'CONFIG_RISCV_ESP32C3'], if_true: files(
-    'esp_aes.c',
-    'esp32c3_aes.c',
-    'esp_rsa.c',
-    'esp32c3_rsa.c',
-    'esp_ds.c',
-    'esp32c3_ds.c',
-    'esp32c3_xts_aes.c'
-  ))
-  system_ss.add(when: [gcrypt, 'CONFIG_XTENSA_ESP32S3'], if_true: files(
-    'esp_aes.c',
-    'esp32s3_aes.c',
-    'esp_rsa.c',
-    'esp32s3_rsa.c',
-    'esp_ds.c',
-    'esp32s3_ds.c',
-    'esp32s3_xts_aes.c'
-  ))
-endif
+system_ss.add(when: 'CONFIG_RISCV_ESP32C3', if_true: files(
+  'esp_aes.c',
+  'esp32c3_aes.c',
+  'esp_rsa.c',
+  'esp32c3_rsa.c',
+  'esp_ds.c',
+  'esp32c3_ds.c',
+  'esp32c3_xts_aes.c'
+))
+system_ss.add(when: 'CONFIG_XTENSA_ESP32S3', if_true: files(
+  'esp_aes.c',
+  'esp32s3_aes.c',
+  'esp_rsa.c',
+  'esp32s3_rsa.c',
+  'esp_ds.c',
+  'esp32s3_ds.c',
+  'esp32s3_xts_aes.c'
+))
+system_ss.add(files('esp_gcrypt_shim.c'))
 
 system_ss.add(when: 'CONFIG_GRLIB', if_true: files('grlib_ahb_apb_pnp.c'))
 

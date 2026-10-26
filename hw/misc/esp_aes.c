@@ -11,7 +11,7 @@
 #include "hw/sysbus.h"
 #include "hw/misc/esp_aes.h"
 #include "qemu/error-report.h"
-#include <gcrypt.h>
+#include "esp_gcrypt_shim.h"
 #include "qemu/bswap.h"
 #include "hw/irq.h"
 #include "crypto/aes.h"
