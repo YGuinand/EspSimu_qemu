@@ -246,12 +246,14 @@ static gboolean uart_transmit(void *do_not_use, GIOCondition cond, void *opaque)
     */
 
     while (fifo8_num_used(&s->tx_fifo) > 0) {
-        uint8_t b = fifo8_peek_(&s->tx_fifo);
-        if (qemu_chr_fe_backend_open(&s->chr)){ 
+        uint8_t b = fifo8_pop(&s->tx_fifo); //don´t wait for uart read when port closed, serial data will be lost
+        if (qemu_chr_fe_backend_open(&s->chr)){
           /*int r = */qemu_chr_fe_write(&s->chr, &b, 1);
         }
-        picsimlab_uart_tx_event(s->id, b);
-        fifo8_pop(&s->tx_fifo); //don´t wait for uart read when port closed, serial data will be lost 
+        if (picsimlab_uart_tx_event) { /* pas de crash si aucun callbacks_type enregistré (pilotage chardev uniquement) */
+          picsimlab_uart_tx_event(s->id, b);
+        }
+
 /*
         if (r == 1) {
             fifo8_pop(&s->tx_fifo);
