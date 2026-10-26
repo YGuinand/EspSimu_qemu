@@ -234,7 +234,7 @@ static void dwc_sdmmc_handle_cmd(DWCSDMMCState *s)
 {
     SDRequest request;
     uint8_t resp[16];
-    int rlen;
+    size_t rlen;
     DEBUG("%s: hw_cmd=0x%08x\n", __func__, s->cmd);
     sdmmc_hw_cmd_t hw_cmd = dwc_sdmmc_get_hw_cmd(s);
     if (hw_cmd.update_clk_reg) {
@@ -244,10 +244,10 @@ static void dwc_sdmmc_handle_cmd(DWCSDMMCState *s)
     request.cmd = hw_cmd.cmd_index;
     request.arg = s->cmdarg;
 
-    rlen = sdbus_do_command(&s->sdbus, &request, resp);
+    rlen = sdbus_do_command(&s->sdbus, &request, resp, sizeof(resp));
     s->rintsts |= SDMMC_INTMASK_CMD_DONE;
-    if (rlen < 0) {
-        DEBUG("%s: error: rlen=%d\n", __func__, rlen);
+    if (rlen == 0) {
+        DEBUG("%s: error: rlen=%zu\n", __func__, rlen);
     } else {
         if (hw_cmd.response_expect) {
             if (rlen == 4 && !hw_cmd.response_long) {
