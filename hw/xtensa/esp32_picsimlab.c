@@ -34,6 +34,7 @@
 #include "system/runstate.h"
 #include "system/blockdev.h"
 #include "system/block-backend.h"
+#include "exec/watchpoint.h"
 #include "net/net.h"
 #include "elf.h"
 
