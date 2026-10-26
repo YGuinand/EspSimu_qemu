@@ -352,7 +352,7 @@ static void st7789v_realize(SSIPeripheral *d, Error **errp) {
     }
 }
 
-static void st7789v_class_init(ObjectClass *klass, void *data) {
+static void st7789v_class_init(ObjectClass *klass, const void *data) {
     DeviceClass *dc = DEVICE_CLASS(klass);
     SSIPeripheralClass *k = SSI_PERIPHERAL_CLASS(klass);
 

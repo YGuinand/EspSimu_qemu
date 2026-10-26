@@ -62,7 +62,7 @@ static void esp32c3_iomux_init(Object *obj) {
                           0x1000);
 }
 
-static void esp32c3_iomux_class_init(ObjectClass *klass, void *data) {
+static void esp32c3_iomux_class_init(ObjectClass *klass, const void *data) {
 
 }
 

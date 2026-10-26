@@ -824,10 +824,9 @@ static void esp_timg_init(Object *obj)
 
 static Property esp_timg_properties[] = {
     DEFINE_PROP_BOOL("wdt_disable", ESPTimgState, wdt_disable, false),
-    DEFINE_PROP_END_OF_LIST(),
 };
 
-static void esp_timg_class_init(ObjectClass *klass, void *data)
+static void esp_timg_class_init(ObjectClass *klass, const void *data)
 {
     DeviceClass *dc = DEVICE_CLASS(klass);
     ResettableClass *rc = RESETTABLE_CLASS(klass);

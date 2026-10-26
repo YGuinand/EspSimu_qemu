@@ -932,7 +932,6 @@ uint64_t esp_gdma_read_register(ESPGdmaState* s, DmaRegister reg)
 
 static Property esp_gdma_properties[] = {
     DEFINE_PROP_LINK("soc_mr", ESPGdmaState, soc_mr, TYPE_MEMORY_REGION, MemoryRegion*),
-    DEFINE_PROP_END_OF_LIST(),
 };
 
 
@@ -996,7 +995,7 @@ static void esp_gdma_init(Object *obj)
 }
 
 
-static void esp_gdma_class_init(ObjectClass *klass, void *data)
+static void esp_gdma_class_init(ObjectClass *klass, const void *data)
 {
     DeviceClass *dc = DEVICE_CLASS(klass);
     ResettableClass *rc = RESETTABLE_CLASS(klass);

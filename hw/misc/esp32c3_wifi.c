@@ -222,10 +222,9 @@ static void esp32C3_wifi_realize(DeviceState *dev, Error **errp)
 }
 static Property esp32C3_wifi_properties[] = {
     DEFINE_NIC_PROPERTIES(Esp32WifiState, conf),
-    DEFINE_PROP_END_OF_LIST(),
 };
 
-static void esp32C3_wifi_class_init(ObjectClass *klass, void *data)
+static void esp32C3_wifi_class_init(ObjectClass *klass, const void *data)
 {
 	ResettablePhases rp;
     DeviceClass *dc = DEVICE_CLASS(klass);

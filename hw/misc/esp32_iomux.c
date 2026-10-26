@@ -352,7 +352,7 @@ static void esp32_iomux_init(Object *obj) {
     }
 }
 
-static void esp32_iomux_class_init(ObjectClass *klass, void *data) {
+static void esp32_iomux_class_init(ObjectClass *klass, const void *data) {
 	ResettablePhases rp;
     DeviceClass *dc = DEVICE_CLASS(klass);
     dc->realize = esp32_iomux_realize;

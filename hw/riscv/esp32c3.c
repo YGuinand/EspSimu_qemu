@@ -663,7 +663,7 @@ static void esp32c3_machine_init(MachineState *machine)
 
 
 /* Initialize machine type */
-static void esp32c3_machine_class_init(ObjectClass *oc, void *data)
+static void esp32c3_machine_class_init(ObjectClass *oc, const void *data)
 {
     MachineClass *mc = MACHINE_CLASS(oc);
     mc->desc = "Espressif ESP32-C3 machine";

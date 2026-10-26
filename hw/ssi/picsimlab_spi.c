@@ -47,7 +47,7 @@ static void PICSIMLAB_SPI_realize(SSIPeripheral *d, Error **errp) {
 }
 
 
-static void PICSIMLAB_SPI_class_init(ObjectClass *klass, void *data) {
+static void PICSIMLAB_SPI_class_init(ObjectClass *klass, const void *data) {
     //DeviceClass *dc = DEVICE_CLASS(klass);
     SSIPeripheralClass *k = SSI_PERIPHERAL_CLASS(klass);
     k->realize = PICSIMLAB_SPI_realize;

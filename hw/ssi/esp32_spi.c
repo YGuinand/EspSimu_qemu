@@ -511,10 +511,9 @@ static void esp32_spi_init(Object *obj)
 static Property esp32_spi_properties[] = {
     DEFINE_PROP_BOOL("xfer_32_bits",Esp32SpiState,xfer_32_bits,false),
     DEFINE_PROP_BOOL("use_cs",Esp32SpiState,use_cs,false),
-    DEFINE_PROP_END_OF_LIST(),
 };
 
-static void esp32_spi_class_init(ObjectClass *klass, void *data)
+static void esp32_spi_class_init(ObjectClass *klass, const void *data)
 {
     DeviceClass *dc = DEVICE_CLASS(klass);
     ResettableClass *rc = RESETTABLE_CLASS(klass);

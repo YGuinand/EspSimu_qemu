@@ -26,7 +26,6 @@
 
 /* Device properties */
 static Property esp32_twai_properties[] = {
-    DEFINE_PROP_END_OF_LIST(),
 };
 
 /* Migration state description */
@@ -146,7 +145,7 @@ static void esp32_twai_realize(DeviceState *dev, Error **errp)
 }
 
 /* Class initialization */
-static void esp32_twai_class_init(ObjectClass *klass, void *data)
+static void esp32_twai_class_init(ObjectClass *klass, const void *data)
 {
     DeviceClass *dc = DEVICE_CLASS(klass);
     ResettableClass *rc = RESETTABLE_CLASS(klass);

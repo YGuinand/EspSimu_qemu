@@ -456,10 +456,9 @@ static void esp32_dport_init(Object *obj)
 static Property esp32_dport_properties[] = {
     DEFINE_PROP_DRIVE("flash", Esp32DportState, flash_blk),
     DEFINE_PROP_BOOL("has_psram", Esp32DportState, has_psram, false),
-    DEFINE_PROP_END_OF_LIST(),
 };
 
-static void esp32_dport_class_init(ObjectClass *klass, void *data)
+static void esp32_dport_class_init(ObjectClass *klass, const void *data)
 {
     DeviceClass *dc = DEVICE_CLASS(klass);
     ResettableClass *rc = RESETTABLE_CLASS(klass);

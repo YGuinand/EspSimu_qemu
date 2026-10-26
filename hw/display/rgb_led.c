@@ -169,13 +169,12 @@ static void rgbled_reset(DeviceState *obj)
 static Property rgb_led_properties[] = {
     DEFINE_PROP_INT32("width", RgbledState, width, 16),
     DEFINE_PROP_INT32("height", RgbledState, height, 16),
-    DEFINE_PROP_END_OF_LIST(),
 };
 
-static void rgbled_class_init(ObjectClass *klass, void *data) {
+static void rgbled_class_init(ObjectClass *klass, const void *data) {
     DeviceClass *dc = DEVICE_CLASS(klass);
     SSIPeripheralClass *k = SSI_PERIPHERAL_CLASS(klass);
-    dc->reset = rgbled_reset;
+    device_class_set_legacy_reset(dc, rgbled_reset);
     k->realize = rgbled_realize;
     k->transfer = rgbled_transfer;
     set_bit(DEVICE_CATEGORY_DISPLAY, dc->categories);

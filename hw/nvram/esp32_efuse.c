@@ -299,10 +299,9 @@ static void esp32_efuse_init(Object *obj)
 
 static Property esp32_efuse_properties[] = {
     DEFINE_PROP_DRIVE("drive", Esp32EfuseState, blk),
-    DEFINE_PROP_END_OF_LIST(),
 };
 
-static void esp32_efuse_class_init(ObjectClass *klass, void *data)
+static void esp32_efuse_class_init(ObjectClass *klass, const void *data)
 {
     DeviceClass *dc = DEVICE_CLASS(klass);
     ResettableClass *rc = RESETTABLE_CLASS(klass);

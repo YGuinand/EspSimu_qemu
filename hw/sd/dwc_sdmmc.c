@@ -534,7 +534,6 @@ static const MemoryRegionOps dwc_sdmmc_ops = {
 
 
 static Property dwc_sdmmc_properties[] = {
-        DEFINE_PROP_END_OF_LIST(),
 };
 
 static void dwc_sdmmc_init(Object *obj)
@@ -568,7 +567,7 @@ static void dwc_sdmmc_reset(DeviceState *dev)
     memset(s->resp, 0, sizeof(s->resp));
 }
 
-static void dwc_sdmmc_class_init(ObjectClass *klass, void *data)
+static void dwc_sdmmc_class_init(ObjectClass *klass, const void *data)
 {
     DeviceClass *dc = DEVICE_CLASS(klass);
 

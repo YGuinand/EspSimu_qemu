@@ -553,10 +553,9 @@ static void esp32s3_soc_init(Object *obj)
 }
 
 static Property esp32s3_soc_properties[] = {
-    DEFINE_PROP_END_OF_LIST(),
 };
 
-static void esp32s3_soc_class_init(ObjectClass *klass, void *data)
+static void esp32s3_soc_class_init(ObjectClass *klass, const void *data)
 {
     DeviceClass *dc = DEVICE_CLASS(klass);
 
@@ -974,7 +973,7 @@ static ram_addr_t esp32s3_fixup_ram_size(ram_addr_t requested_size)
 }
 
 /* Initialize machine type */
-static void esp32s3_machine_class_init(ObjectClass *oc, void *data)
+static void esp32s3_machine_class_init(ObjectClass *oc, const void *data)
 {
     MachineClass *mc = MACHINE_CLASS(oc);
     mc->desc = "Espressif ESP32S3 machine";

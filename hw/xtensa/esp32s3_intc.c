@@ -123,10 +123,9 @@ static void esp32s3_intmatrix_init(Object *obj)
 static Property esp32s3_intmatrix_properties[] = {
     DEFINE_PROP_LINK("cpu0", Esp32s3IntMatrixState, cpu[0], TYPE_XTENSA_CPU, XtensaCPU *),
     DEFINE_PROP_LINK("cpu1", Esp32s3IntMatrixState, cpu[1], TYPE_XTENSA_CPU, XtensaCPU *),
-    DEFINE_PROP_END_OF_LIST(),
 };
 
-static void esp32s3_intmatrix_class_init(ObjectClass *klass, void *data)
+static void esp32s3_intmatrix_class_init(ObjectClass *klass, const void *data)
 {
     DeviceClass *dc = DEVICE_CLASS(klass);
     ResettableClass *rc = RESETTABLE_CLASS(klass);

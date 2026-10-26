@@ -83,7 +83,7 @@ static const VMStateDescription vmstate_picsimlab_i2c = {
                                VMSTATE_I2C_SLAVE(i2c, PICSIMLAB_I2CState),
                                VMSTATE_END_OF_LIST()}};
 
-static void picsimlab_i2c_class_init(ObjectClass *klass, void *data) {
+static void picsimlab_i2c_class_init(ObjectClass *klass, const void *data) {
   DeviceClass *dc = DEVICE_CLASS(klass);
   I2CSlaveClass *k = I2C_SLAVE_CLASS(klass);
   ResettablePhases rp;

@@ -632,10 +632,9 @@ static void esp_efuse_init(Object *obj)
 
 static Property esp_efuse_properties[] = {
     DEFINE_PROP_DRIVE("drive", ESPEfuseState, blk),
-    DEFINE_PROP_END_OF_LIST(),
 };
 
-static void esp_efuse_class_init(ObjectClass *klass, void *data)
+static void esp_efuse_class_init(ObjectClass *klass, const void *data)
 {
     DeviceClass *dc = DEVICE_CLASS(klass);
     ESPEfuseClass* esp_efuse = ESP_EFUSE_CLASS(klass);

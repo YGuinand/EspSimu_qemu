@@ -315,11 +315,10 @@ static void esp_cpu_init(Object *obj)
 
 static Property riscv_harts_props[] = {
     DEFINE_PROP_UINT32("hartid-base", EspRISCVCPU, hartid_base, 0),
-    DEFINE_PROP_END_OF_LIST(),
 };
 
 
-static void esp_cpu_class_init(ObjectClass *klass, void *data)
+static void esp_cpu_class_init(ObjectClass *klass, const void *data)
 {
     DeviceClass *dc = DEVICE_CLASS(klass);
     EspRISCVCPUClass *cpuclass = ESP_CPU_CLASS(klass);

@@ -346,10 +346,9 @@ static void esp32s3_cache_init(Object *obj)
 }
 
 static Property esp32s3_cache_properties[] = {
-    DEFINE_PROP_END_OF_LIST(),
 };
 
-static void esp32s3_cache_class_init(ObjectClass *klass, void *data)
+static void esp32s3_cache_class_init(ObjectClass *klass, const void *data)
 {
     DeviceClass *dc = DEVICE_CLASS(klass);
     ResettableClass *rc = RESETTABLE_CLASS(klass);
@@ -428,7 +427,7 @@ static int esp32s3_mmu_region_notify_flag_changed(IOMMUMemoryRegion *iommu,
 }
 
 
-static void esp32s3_mmu_region_class_init(ObjectClass *klass, void *data)
+static void esp32s3_mmu_region_class_init(ObjectClass *klass, const void *data)
 {
     IOMMUMemoryRegionClass *imrc = IOMMU_MEMORY_REGION_CLASS(klass);
 

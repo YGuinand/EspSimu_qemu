@@ -390,7 +390,6 @@ static void esp32_wifi_realize(DeviceState *dev, Error **errp)
 }
 static Property esp32_wifi_properties[] = {
     DEFINE_NIC_PROPERTIES(Esp32WifiState, conf),
-    DEFINE_PROP_END_OF_LIST(),
 };
 
 static void esp32_wifi_reset_enter(Object *obj, ResetType type)
@@ -400,7 +399,7 @@ static void esp32_wifi_reset_enter(Object *obj, ResetType type)
 	    s->ap_state=0;
 }
 
-static void esp32_wifi_class_init(ObjectClass *klass, void *data)
+static void esp32_wifi_class_init(ObjectClass *klass, const void *data)
 {
     DeviceClass *dc = DEVICE_CLASS(klass);
     ResettablePhases rp;

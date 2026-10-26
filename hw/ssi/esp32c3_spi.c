@@ -454,10 +454,9 @@ static void esp32c3_spi_init(Object *obj)
 }
 
 static Property esp32c3_spi_properties[] = {
-    DEFINE_PROP_END_OF_LIST(),
 };
 
-static void esp32c3_spi_class_init(ObjectClass *klass, void *data)
+static void esp32c3_spi_class_init(ObjectClass *klass, const void *data)
 {
     DeviceClass *dc = DEVICE_CLASS(klass);
     ResettableClass *rc = RESETTABLE_CLASS(klass);

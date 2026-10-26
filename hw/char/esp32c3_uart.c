@@ -147,7 +147,7 @@ static void esp32c3_uart_init(Object *obj)
 }
 
 
-static void esp32c3_uart_class_init(ObjectClass *klass, void *data)
+static void esp32c3_uart_class_init(ObjectClass *klass, const void *data)
 {
     DeviceClass *dc = DEVICE_CLASS(klass);
     ESP32C3UARTClass* esp32c3 = ESP32C3_UART_CLASS(klass);
