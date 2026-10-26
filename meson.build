@@ -843,7 +843,7 @@ if host_os == 'emscripten'
   emulator_link_args += [
     '-sTOTAL_MEMORY=2GB',
     '-sEXPORTED_RUNTIME_METHODS=getTempRet0,setTempRet0,addFunction,removeFunction,TTY,FS,HEAPU32,HEAPU8,HEAPF32',
-    '-sEXPORTED_FUNCTIONS=_main,_malloc,_free,_qemu_init,_qemu_main_loop,_qemu_cleanup,_qemu_system_reset_request,_qemu_system_shutdown_request,_qemu_system_vmstop_request,_qemu_picsimlab_register_callbacks,_qemu_picsimlab_set_pin,_qemu_picsimlab_set_apin_mv,_qemu_picsimlab_uart_receive,_qemu_picsimlab_get_internals,_qemu_picsimlab_get_TIOCM,_qemu_picsimlab_flash_dump',
+    '-sEXPORTED_FUNCTIONS=_main,_malloc,_free,_qemu_init,_qemu_main_loop,_qemu_cleanup,_qemu_system_reset_request,_qemu_system_shutdown_request,_qemu_system_vmstop_request,_qemu_picsimlab_register_callbacks,_qemu_picsimlab_set_pin,_qemu_picsimlab_set_apin_mv,_qemu_picsimlab_uart_receive,_qemu_picsimlab_get_internals,_qemu_picsimlab_get_TIOCM,_qemu_picsimlab_flash_dump,_qemu_picsimlab_ring_callbacks,_qemu_picsimlab_uart_ring_info',
   ]
 endif
 midl = not_found
