@@ -1,8 +1,13 @@
 [built-in options]
-c_args = ['-pthread']
-cpp_args = ['-pthread']
+# POC-B portage : les [built-in options] c_args du machine-file ÉCRASENT les
+# c_args du cross-file (configure) — répliquer ici image-CFLAGS + EXTRA_CFLAGS,
+# sinon util/memalign.c : "No function to allocate aligned memory available".
+c_args = ['-Wno-error=incompatible-function-pointer-types','-Wincompatible-function-pointer-types','-O2','-matomics','-mbulk-memory','-DNDEBUG','-pthread','-sWASM_BIGINT','-sMALLOC=mimalloc','-sASYNCIFY=1','-O3','-g','-Wno-error=unused-command-line-argument','-DG_DISABLE_ASSERT','-D_GNU_SOURCE','-sPROXY_TO_PTHREAD=1','-sFORCE_FILESYSTEM','-sALLOW_TABLE_GROWTH','-sTOTAL_MEMORY=2300MB']
+cpp_args = ['-Wno-error=incompatible-function-pointer-types','-Wincompatible-function-pointer-types','-O2','-matomics','-mbulk-memory','-DNDEBUG','-pthread','-sWASM_BIGINT','-sMALLOC=mimalloc','-sASYNCIFY=1','-O3','-g','-Wno-error=unused-command-line-argument','-DG_DISABLE_ASSERT','-D_GNU_SOURCE','-sPROXY_TO_PTHREAD=1','-sFORCE_FILESYSTEM','-sALLOW_TABLE_GROWTH','-sTOTAL_MEMORY=2300MB']
 objc_args = ['-pthread']
 # -sPROXY_TO_PTHREAD link time flag always requires -pthread even during
 # configuration so explicitly add the flag here.
-c_link_args = ['-pthread','-sASYNCIFY=1','-sPROXY_TO_PTHREAD=1','-sFORCE_FILESYSTEM','-sALLOW_TABLE_GROWTH','-sTOTAL_MEMORY=2GB','-sWASM_BIGINT','-sEXPORT_ES6=1','-sASYNCIFY_IMPORTS=ffi_call_js','-sEXPORTED_RUNTIME_METHODS=addFunction,removeFunction,TTY,FS']
-cpp_link_args = ['-pthread','-sASYNCIFY=1','-sPROXY_TO_PTHREAD=1','-sFORCE_FILESYSTEM','-sALLOW_TABLE_GROWTH','-sTOTAL_MEMORY=2GB','-sWASM_BIGINT','-sEXPORT_ES6=1','-sASYNCIFY_IMPORTS=ffi_call_js','-sEXPORTED_RUNTIME_METHODS=addFunction,removeFunction,TTY,FS']
+# POC-B portage: base QEMU 10.1 inchangée (2GB, dlmalloc) + extensions
+# EspSimu : exports dlopen-equivalent + vues heap pour le driver JS.
+c_link_args = ['-pthread','-sASYNCIFY=1','-sPROXY_TO_PTHREAD=1','-sFORCE_FILESYSTEM','-sALLOW_TABLE_GROWTH','-sTOTAL_MEMORY=2GB','-sWASM_BIGINT','-sEXPORT_ES6=1','-sASYNCIFY_IMPORTS=ffi_call_js','-sEXPORTED_RUNTIME_METHODS=getTempRet0,setTempRet0,addFunction,removeFunction,TTY,FS,HEAPU32,HEAPU8,HEAPF32','-sEXPORTED_FUNCTIONS=_main,_malloc,_free,_qemu_init,_qemu_main_loop,_qemu_cleanup,_qemu_system_reset_request,_qemu_system_shutdown_request,_qemu_system_vmstop_request,_qemu_picsimlab_register_callbacks,_qemu_picsimlab_set_pin,_qemu_picsimlab_set_apin_mv,_qemu_picsimlab_uart_receive,_qemu_picsimlab_get_internals,_qemu_picsimlab_get_TIOCM,_qemu_picsimlab_flash_dump']
+cpp_link_args = ['-pthread','-sASYNCIFY=1','-sPROXY_TO_PTHREAD=1','-sFORCE_FILESYSTEM','-sALLOW_TABLE_GROWTH','-sTOTAL_MEMORY=2GB','-sWASM_BIGINT','-sEXPORT_ES6=1','-sASYNCIFY_IMPORTS=ffi_call_js','-sEXPORTED_RUNTIME_METHODS=getTempRet0,setTempRet0,addFunction,removeFunction,TTY,FS,HEAPU32,HEAPU8,HEAPF32','-sEXPORTED_FUNCTIONS=_main,_malloc,_free,_qemu_init,_qemu_main_loop,_qemu_cleanup,_qemu_system_reset_request,_qemu_system_shutdown_request,_qemu_system_vmstop_request,_qemu_picsimlab_register_callbacks,_qemu_picsimlab_set_pin,_qemu_picsimlab_set_apin_mv,_qemu_picsimlab_uart_receive,_qemu_picsimlab_get_internals,_qemu_picsimlab_get_TIOCM,_qemu_picsimlab_flash_dump']
