@@ -1,0 +1,108 @@
+# Recette issu du Dockerfile de ktock/qemu-wasm (BSP glib wasm pour QEMU 10.1 TCI)
+#:pointer adapté pour podman (pas de syntax dockerfile:1.5, pas de COPY --link)
+FROM docker.io/emscripten/emsdk:3.1.50
+
+RUN apt-get update && apt-get install -y \
+    autoconf \
+    build-essential \
+    libglib2.0-dev \
+    libtool \
+    pkgconf \
+    ninja-build \
+    python3-pip
+
+RUN pip3 install meson==1.5.0
+
+ENV TARGET=/build/target
+ENV CFLAGS="-O2 -matomics -mbulk-memory -DNDEBUG -sWASM_BIGINT -DWASM_BIGINT -pthread -sMALLOC=mimalloc  -sASYNCIFY=1"
+ENV CXXFLAGS="$CFLAGS"
+ENV LDFLAGS="-L$TARGET/lib -O2"
+ENV CPATH="$TARGET/include"
+ENV PKG_CONFIG_PATH="$TARGET/lib/pkgconfig"
+ENV EM_PKG_CONFIG_PATH="$PKG_CONFIG_PATH"
+ENV CHOST="wasm32-unknown-linux"
+
+RUN mkdir /build && mkdir -p $TARGET
+
+# --- zlib (tarball local, plus de réseau dans le build) ---
+COPY wasm-src/zlib-1.3.1.tar.gz /zsrc/
+RUN mkdir -p /zlib && tar xzf /zsrc/zlib-1.3.1.tar.gz -C /zlib --strip-components=1
+WORKDIR /zlib
+RUN emconfigure ./configure --prefix=$TARGET --static
+RUN make install
+
+# --- libffi (pin ktock adbcf2b, archive du commit, local) ---
+COPY wasm-src/libffi-adbcf2b.tar.gz /lsrc/
+RUN mkdir -p /libffi && tar xzf /lsrc/libffi-adbcf2b.tar.gz -C /libffi --strip-components=1
+WORKDIR /libffi
+RUN autoreconf -fiv
+RUN LDFLAGS="$LDFLAGS -sEXPORTED_RUNTIME_METHODS='getTempRet0,setTempRet0'" ; \
+    emconfigure ./configure --host=$CHOST --prefix=$TARGET --enable-static --disable-shared --disable-dependency-tracking \
+    --disable-builddir --disable-multi-os-directory --disable-raw-api --disable-structs --disable-docs
+RUN emmake make install SUBDIRS='include'
+
+# --- stub libresolv ---
+RUN mkdir -p /stub && cd /stub
+WORKDIR /stub
+RUN printf '#include <netdb.h>\nint res_query(const char *name, int class, int type, unsigned char *dest, int len)\n{\n    h_errno = HOST_NOT_FOUND;\n    return -1;\n}\n' > res_query.c
+RUN emcc ${CFLAGS} -c res_query.c -fPIC -o libresolv.o
+RUN ar rcs libresolv.a libresolv.o
+RUN mkdir -p $TARGET/lib/
+RUN cp libresolv.a $TARGET/lib/
+
+# --- glib 2.75.0 (meson cross wasm32, tarball local) ---
+COPY wasm-src/glib-2.75.0.tar.xz /gsrc/
+RUN mkdir -p /glib && tar xJf /gsrc/glib-2.75.0.tar.xz -C /glib --strip-components=1
+WORKDIR /glib
+ENV CFLAGS="-Wno-error=incompatible-function-pointer-types -Wincompatible-function-pointer-types -O2 -matomics -mbulk-memory -DNDEBUG -pthread -sWASM_BIGINT -sMALLOC=mimalloc -sASYNCIFY=1"
+ENV CXXFLAGS="$CFLAGS"
+RUN cat <<'EOT' > /emcc-meson-wrap.sh
+#!/bin/bash
+set -euo pipefail
+old_string="-Werror=unused-command-line-argument"
+new_string="-Wno-error=unused-command-line-argument"
+cmd="$1"
+shift
+new_args=()
+for arg in "$@"; do
+  new_arg="${arg//$old_string/$new_string}"
+  new_args+=("$new_arg")
+done
+"$cmd" "${new_args[@]}"
+EOT
+RUN chmod +x /emcc-meson-wrap.sh
+RUN cat <<'EOT' > /cross.meson
+[host_machine]
+system = 'emscripten'
+cpu_family = 'wasm32'
+cpu = 'wasm32'
+endian = 'little'
+
+[binaries]
+c = ['bash', '/emcc-meson-wrap.sh', 'emcc']
+cpp = ['bash', '/emcc-meson-wrap.sh', 'em++']
+ar = 'emar'
+ranlib = 'emranlib'
+pkgconfig = ['pkg-config', '--static']
+EOT
+RUN meson setup _build --prefix=$TARGET --cross-file=/cross.meson --default-library=static --buildtype=release \
+    --force-fallback-for=pcre2,gvdb -Dselinux=disabled -Dxattr=false -Dlibmount=disabled -Dnls=disabled \
+    -Dtests=false -Dglib_assert=false -Dglib_checks=false
+RUN sed -i -E "/#define HAVE_CLOSE_RANGE 1/d" ./_build/config.h
+RUN sed -i -E "/#define HAVE_EPOLL_CREATE 1/d" ./_build/config.h
+RUN sed -i -E "/#define HAVE_KQUEUE 1/d" ./_build/config.h
+RUN sed -i -E "/#define HAVE_POSIX_SPAWN 1/d" ./_build/config.h
+RUN sed -i -E "/#define HAVE_FALLOCATE 1/d" ./_build/config.h
+RUN meson install -C _build
+
+# --- pixman 0.42.2 (statique, archive du tag, local) ---
+COPY wasm-src/pixman-0.42.2.tar.bz2 /psrc/
+RUN mkdir -p /pixman && tar xjf /psrc/pixman-0.42.2.tar.bz2 -C /pixman --strip-components=1
+WORKDIR /pixman
+RUN NOCONFIGURE=y ./autogen.sh
+RUN emconfigure ./configure --prefix=/build/target/
+RUN emmake make -j$(nproc)
+RUN emmake make install
+RUN rm /build/target/lib/libpixman-1.so /build/target/lib/libpixman-1.so.0 /build/target/lib/libpixman-1.so.0.42.2
+
+CMD sleep infinity
