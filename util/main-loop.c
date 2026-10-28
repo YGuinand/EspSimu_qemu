@@ -35,6 +35,19 @@
 #include "qemu/error-report.h"
 #include "qemu/queue.h"
 #include "qom/object.h"
+#include "system/runstate.h"
+
+#ifdef __EMSCRIPTEN__
+/* Portage wasm (branche poc-b) : la boucle principale ne sait pas se
+   bloquer — g_poll/qemu_poll_ns se rendent au navigateur sans dormir,
+   la boucle itere ~57 000 fois/s (mesure POC B). En marche, chaque
+   iteration fait du travail utile ; en PAUSE (Power OFF), elle ne sert
+   plus qu'a bruler du CPU (symptome : charge persistante apres
+   l'extinction). Compteur expose a EspDiag (diagnostic.cpp, wasm) pour
+   mesurer la cadence avant/apres throttle. */
+#include <emscripten/threading.h>
+uint64_t qemu_picsimlab_mainloop_iters;
+#endif
 
 #ifndef _WIN32
 #include <sys/wait.h>
@@ -566,6 +579,20 @@ void main_loop_poll_remove_notifier(Notifier *notify)
 
 void main_loop_wait(int nonblocking)
 {
+#ifdef __EMSCRIPTEN__
+    __atomic_store_n(&qemu_picsimlab_mainloop_iters,
+                     qemu_picsimlab_mainloop_iters + 1, __ATOMIC_RELAXED);
+    if (!nonblocking && !runstate_is_running()) {
+        /* VM en pause : dormir 5 ms (~200 it/s) au lieu de tourner a
+           57 kHz. Les demandes posees pendant la pause (resume, reset,
+           shutdown) sont consommees au plus tard 5 ms apres leur arrivee ;
+           les timers mur du main loop continuent d'etre traites a cette
+           cadence (latence <= 5 ms, semantics preservee). */
+        emscripten_thread_sleep(5);
+        qemu_clock_run_all_timers();
+        return;
+    }
+#endif
     MainLoopPoll mlpoll = {
         .state = MAIN_LOOP_POLL_FILL,
         .timeout = UINT32_MAX,
